@@ -1,34 +1,48 @@
-import crypto from 'crypto';
-import type { Request, Response } from 'express';
-import pool from '../db/db';
+import crypto from "crypto";
+import type { Request, Response } from "express";
+import pool, { logAudit } from "../db/db";
 
 function generateProjectKey(): string {
-  return 'pk_' + crypto.randomBytes(12).toString('hex');
+  return "sk_" + crypto.randomBytes(12).toString("hex");
 }
 
 function generateMasterKey(): string {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString("hex");
 }
 
 function encryptMasterKey(masterKeyHex: string): string {
   const serverSecret = process.env.SERVER_SECRET;
-  if (!serverSecret) throw new Error('SERVER_SECRET env var not set.');
-  const key = Buffer.from(serverSecret.slice(0, 64), 'hex');
+  if (!serverSecret) throw new Error("SERVER_SECRET env var not set.");
+  const key = Buffer.from(serverSecret.slice(0, 64), "hex");
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const encrypted = Buffer.concat([cipher.update(masterKeyHex), cipher.final()]);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(masterKeyHex),
+    cipher.final(),
+  ]);
   const tag = cipher.getAuthTag();
-  return JSON.stringify({ iv: iv.toString('hex'), content: encrypted.toString('hex'), tag: tag.toString('hex') });
+  return JSON.stringify({
+    iv: iv.toString("hex"),
+    content: encrypted.toString("hex"),
+    tag: tag.toString("hex"),
+  });
 }
 
 export function decryptMasterKey(encryptedJson: string): string {
   const serverSecret = process.env.SERVER_SECRET;
-  if (!serverSecret) throw new Error('SERVER_SECRET env var not set.');
+  if (!serverSecret) throw new Error("SERVER_SECRET env var not set.");
   const data = JSON.parse(encryptedJson);
-  const key = Buffer.from(serverSecret.slice(0, 64), 'hex');
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(data.iv, 'hex'));
-  decipher.setAuthTag(Buffer.from(data.tag, 'hex'));
-  const decrypted = Buffer.concat([decipher.update(Buffer.from(data.content, 'hex')), decipher.final()]);
+  const key = Buffer.from(serverSecret.slice(0, 64), "hex");
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    key,
+    Buffer.from(data.iv, "hex"),
+  );
+  decipher.setAuthTag(Buffer.from(data.tag, "hex"));
+  const decrypted = Buffer.concat([
+    decipher.update(Buffer.from(data.content, "hex")),
+    decipher.final(),
+  ]);
   return decrypted.toString();
 }
 
@@ -37,11 +51,11 @@ export const listProjects = async (req: any, res: Response) => {
   const { orgId } = req.params;
   try {
     let result;
-    if (req.user.role === 'admin') {
+    if (req.user.role === "admin") {
       result = await pool.query(
         `SELECT id, org_id, name, description, github_repo, project_key, created_by, created_at
          FROM projects WHERE org_id = $1 ORDER BY created_at ASC`,
-        [orgId]
+        [orgId],
       );
     } else {
       result = await pool.query(
@@ -50,13 +64,13 @@ export const listProjects = async (req: any, res: Response) => {
          JOIN project_members pm ON pm.project_id = p.id
          WHERE p.org_id = $1 AND pm.user_id = $2
          ORDER BY p.created_at ASC`,
-        [orgId, req.user.id]
+        [orgId, req.user.id],
       );
     }
     res.json({ projects: result.rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
@@ -64,7 +78,7 @@ export const listProjects = async (req: any, res: Response) => {
 export const createProject = async (req: any, res: Response) => {
   const { orgId } = req.params;
   const { name, description, github_repo } = req.body;
-  if (!name) return res.status(400).json({ error: 'name is required.' });
+  if (!name) return res.status(400).json({ error: "name is required." });
 
   try {
     const project_key = generateProjectKey();
@@ -75,13 +89,31 @@ export const createProject = async (req: any, res: Response) => {
       `INSERT INTO projects (org_id, name, description, github_repo, project_key, master_key, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, org_id, name, description, github_repo, project_key, created_by, created_at`,
-      [orgId, name, description ?? null, github_repo ?? null, project_key, master_key, req.user.id]
+      [
+        orgId,
+        name,
+        description ?? null,
+        github_repo ?? null,
+        project_key,
+        master_key,
+        req.user.id,
+      ],
     );
 
-    res.status(201).json({ project: result.rows[0] });
+    const project = result.rows[0];
+
+    // Auto-add creator as member with full environment access
+    await pool.query(
+      `INSERT INTO project_members (project_id, user_id, environments)
+       VALUES ($1, $2, $3)`,
+      [project.id, req.user.id, ["dev", "staging", "prod"]],
+    );
+
+    await logAudit(req.user.id, project.id, 'project_create', `Created project: ${project.name}`);
+    res.status(201).json({ project });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
@@ -92,22 +124,23 @@ export const getProject = async (req: any, res: Response) => {
     const projectResult = await pool.query(
       `SELECT id, org_id, name, description, github_repo, project_key, created_by, created_at
        FROM projects WHERE id = $1`,
-      [id]
+      [id],
     );
-    if (!projectResult.rows.length) return res.status(404).json({ error: 'Project not found.' });
+    if (!projectResult.rows.length)
+      return res.status(404).json({ error: "Project not found." });
 
     const membersResult = await pool.query(
       `SELECT u.id, u.email, u.name, u.role, pm.environments
        FROM project_members pm
        JOIN users u ON u.id = pm.user_id
        WHERE pm.project_id = $1`,
-      [id]
+      [id],
     );
 
     res.json({ project: projectResult.rows[0], members: membersResult.rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
@@ -115,11 +148,12 @@ export const getProject = async (req: any, res: Response) => {
 export const deleteProject = async (req: any, res: Response) => {
   const { id } = req.params;
   try {
-    await pool.query('DELETE FROM projects WHERE id = $1', [id]);
+    await pool.query("DELETE FROM projects WHERE id = $1", [id]);
+    await logAudit(req.user.id, id, 'project_delete', `Project deleted: ${id}`);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
@@ -135,12 +169,13 @@ export const updateProject = async (req: any, res: Response) => {
          github_repo = COALESCE($3, github_repo)
        WHERE id = $4
        RETURNING id, name, description, github_repo, project_key`,
-      [name ?? null, description ?? null, github_repo ?? null, id]
+      [name ?? null, description ?? null, github_repo ?? null, id],
     );
+    await logAudit(req.user.id, id, 'project_update', `Updated project: ${id}`);
     res.json({ project: result.rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
@@ -149,12 +184,16 @@ export const addMember = async (req: any, res: Response) => {
   const { id: projectId } = req.params;
   const { userId, environments } = req.body;
   if (!userId || !Array.isArray(environments)) {
-    return res.status(400).json({ error: 'userId and environments[] are required.' });
+    return res
+      .status(400)
+      .json({ error: "userId and environments[] are required." });
   }
 
-  const validEnvs = ['dev', 'staging', 'prod'];
+  const validEnvs = ["dev", "staging", "prod"];
   if (!environments.every((e: string) => validEnvs.includes(e))) {
-    return res.status(400).json({ error: 'environments must be dev, staging, or prod.' });
+    return res
+      .status(400)
+      .json({ error: "environments must be dev, staging, or prod." });
   }
 
   try {
@@ -162,12 +201,13 @@ export const addMember = async (req: any, res: Response) => {
       `INSERT INTO project_members (project_id, user_id, environments)
        VALUES ($1, $2, $3)
        ON CONFLICT (project_id, user_id) DO UPDATE SET environments = EXCLUDED.environments`,
-      [projectId, userId, environments]
+      [projectId, userId, environments],
     );
+    await logAudit(req.user.id, projectId, 'member_add', `Added user ${userId} to project ${projectId}`);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
@@ -176,13 +216,14 @@ export const removeMember = async (req: any, res: Response) => {
   const { id: projectId, userId } = req.params;
   try {
     await pool.query(
-      'DELETE FROM project_members WHERE project_id = $1 AND user_id = $2',
-      [projectId, userId]
+      "DELETE FROM project_members WHERE project_id = $1 AND user_id = $2",
+      [projectId, userId],
     );
+    await logAudit(req.user.id, projectId, 'member_remove', `Removed user ${userId} from project ${projectId}`);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
@@ -193,18 +234,20 @@ export const getProjectByKey = async (req: any, res: Response) => {
     const result = await pool.query(
       `SELECT p.id, p.org_id, p.name, p.description, p.github_repo, p.project_key, p.created_at
        FROM projects p
-       JOIN project_members pm ON pm.project_id = p.id
-       WHERE p.project_key = $1 AND pm.user_id = $2`,
-      [projectKey, req.user.id]
+       LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $2
+       WHERE p.project_key = $1 AND (pm.user_id = $2 OR $3 = 'admin')`,
+      [projectKey, req.user.id, req.user.role],
     );
 
     if (!result.rows.length) {
-      return res.status(404).json({ error: 'Project not found or access denied.' });
+      return res
+        .status(404)
+        .json({ error: "Project not found or access denied." });
     }
 
     res.json({ project: result.rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error.' });
+    res.status(500).json({ error: "Internal server error." });
   }
 };

@@ -1,5 +1,6 @@
 // Central wrapper for all server logic
-const BASE_URL = process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
+const BASE_URL =
+  process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
 
 import { getSession } from "./config";
 
@@ -39,6 +40,8 @@ export async function request(method: string, path: string, body?: any) {
 export const api = {
   login: (body: any) => request("POST", "/auth/login", body),
   getProjectByKey: (key: string) => request("GET", `/projects/by-key/${key}`),
-  pullSecrets: (projectId: string, env: string) => request("GET", `/projects/${projectId}/secrets/pull?env=${env}`),
-  runSecrets: (projectId: string, env: string) => request("GET", `/projects/${projectId}/secrets/run?env=${env}`),
+  pullSecrets: (projectId: string, env: string) =>
+    request("GET", `/projects/${projectId}/secrets/pull?env=${env}`),
+  runSecrets: (projectId: string, env: string) =>
+    request("GET", `/projects/${projectId}/secrets/run?env=${env}`),
 };

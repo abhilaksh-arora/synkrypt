@@ -1,11 +1,15 @@
 {
   "name": "@synkrypt/cli",
+  "version": "0.1.0",
+  "description": "Synkrypt CLI — Developer tools for secure secret management",
   "bin": {
     "synkrypt": "./index.ts"
   },
+  "author": "Synkrypt Team",
+  "license": "MIT",
   "module": "index.ts",
   "type": "module",
-  "private": true,
+  "private": false,
   "devDependencies": {
     "@types/bun": "latest"
   },

@@ -82,7 +82,7 @@ bun run index.ts
 ```bash
 cd ../web
 bun install
-# Optional: SYNKRYPT_SERVER_URL=http://localhost:2809
+# Optional: VITE_SYNKRYPT_SERVER_URL=http://localhost:2809
 bun run dev --port 5173
 ```
 
@@ -95,24 +95,37 @@ Dashboard talks to the server at `http://localhost:2809` by default.
 
 Authenticate your local terminal with the active node.
 
-### Initial Configuration
-
+### 3. CLI Integration
+Navigate to the `cli` directory and link it globally:
 ```bash
-cd ../cli
+cd cli
+bun link
+```
+
+Now you can use the `synkrypt` command from anywhere!
+
+#### Login
+```bash
 synkrypt login
 ```
 
-### Injecting Secrets
-
-Execute your application across different environmental clusters:
-
+#### Link a Project
+Navigate to your application folder and run:
 ```bash
-# Inject development secrets into Vite
-synkrypt run --env dev -- bun run dev
+synkrypt use <project-key>
+```
 
+#### Pull Secrets
+```bash
+synkrypt pull -e dev
+```
+
+#### Run with Secrets
+```bash
+synkrypt run -e dev -- bun run start
+```
 # Deploy to production cluster
 synkrypt run --env prod -- bun run build
-```
 
 ---
 
@@ -133,7 +146,3 @@ Detailed guides on technical nexus protocols, node deployment, and the encryptio
 ## ⚖️ License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
-<p align="center">
-  Built with ⚡ by the Synkrypt Team
-</p>

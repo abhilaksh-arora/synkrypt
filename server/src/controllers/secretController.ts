@@ -177,21 +177,131 @@ export const runSecrets = async (req: any, res: Response) => {
     if (!project) return res.status(403).json({ error: 'Access denied.' });
 
     const result = await pool.query(
-      `SELECT key, encrypted_value FROM secrets
+      `SELECT key, encrypted_value, can_view FROM secrets
        WHERE project_id = $1 AND environment = $2 ORDER BY key ASC`,
       [projectId, env]
     );
 
     const masterKey = decryptMasterKey(project.master_key);
     const secrets: Record<string, string> = {};
+    const restrictedValues: string[] = [];
+
     for (const row of result.rows) {
-      secrets[row.key] = decrypt(row.encrypted_value, masterKey);
+      const val = decrypt(row.encrypted_value, masterKey);
+      secrets[row.key] = val;
+      if (row.can_view === false) {
+        restrictedValues.push(val);
+      }
     }
 
     await logAudit(req.user.id, projectId, 'secret_read', `run env=${env}`);
-    res.json({ secrets });
+    res.json({ secrets, restrictedValues });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
+// POST /projects/:projectId/secrets/bulk
+export const bulkUpsertSecrets = async (req: any, res: Response) => {
+  const { projectId } = req.params;
+  const { environment, secrets } = req.body; // secrets: [{ key, value, can_view }]
+
+  if (!environment || !secrets || !Array.isArray(secrets)) {
+    return res.status(400).json({ error: 'environment and secrets array are required.' });
+  }
+
+  const validEnvs = ['dev', 'staging', 'prod'];
+  if (!validEnvs.includes(environment)) {
+    return res.status(400).json({ error: 'environment must be dev, staging, or prod.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    const project = await getProjectWithAccess(projectId, req.user.id, req.user.role, environment);
+    if (!project) return res.status(403).json({ error: 'Access denied.' });
+
+    const masterKey = decryptMasterKey(project.master_key);
+
+    await client.query('BEGIN');
+    
+    for (const s of secrets) {
+      if (!s.key || s.value === undefined) continue;
+      const encrypted_value = encrypt(String(s.value), masterKey);
+      await client.query(
+        `INSERT INTO secrets (project_id, environment, key, encrypted_value, can_view, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (project_id, environment, key) DO UPDATE SET
+           encrypted_value = EXCLUDED.encrypted_value,
+           can_view = EXCLUDED.can_view,
+           updated_at = now()`,
+        [projectId, environment, s.key, JSON.stringify(encrypted_value), s.can_view ?? true, req.user.id]
+      );
+    }
+
+    await client.query('COMMIT');
+    await logAudit(req.user.id, projectId, 'secret_bulk_write', `count=${secrets.length} env=${environment}`);
+    res.json({ success: true, count: secrets.length });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error.' });
+  } finally {
+    client.release();
+  }
+};
+
+// POST /projects/:projectId/secrets/sync
+export const syncSecrets = async (req: any, res: Response) => {
+  const { projectId } = req.params;
+  const { fromEnv, toEnv } = req.body;
+
+  if (!fromEnv || !toEnv) {
+    return res.status(400).json({ error: 'fromEnv and toEnv are required.' });
+  }
+
+  const validEnvs = ['dev', 'staging', 'prod'];
+  if (!validEnvs.includes(fromEnv) || !validEnvs.includes(toEnv)) {
+    return res.status(400).json({ error: 'Invalid environment specification.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    const project = await getProjectWithAccess(projectId, req.user.id, req.user.role, fromEnv);
+    if (!project) return res.status(403).json({ error: 'Access denied to source environment.' });
+
+    // Ensure access to target as well
+    const targetAccess = await getProjectWithAccess(projectId, req.user.id, req.user.role, toEnv);
+    if (!targetAccess) return res.status(403).json({ error: 'Access denied to target environment.' });
+
+    await client.query('BEGIN');
+
+    // Get all secrets from source
+    const sourceResult = await client.query(
+      'SELECT key, encrypted_value, can_view FROM secrets WHERE project_id = $1 AND environment = $2',
+      [projectId, fromEnv]
+    );
+
+    for (const row of sourceResult.rows) {
+      await client.query(
+        `INSERT INTO secrets (project_id, environment, key, encrypted_value, can_view, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (project_id, environment, key) DO UPDATE SET
+           encrypted_value = EXCLUDED.encrypted_value,
+           can_view = EXCLUDED.can_view,
+           updated_at = now()`,
+        [projectId, toEnv, row.key, row.encrypted_value, row.can_view, req.user.id]
+      );
+    }
+
+    await client.query('COMMIT');
+    await logAudit(req.user.id, projectId, 'secret_sync', `${fromEnv} -> ${toEnv} (count: ${sourceResult.rows.length})`);
+    res.json({ success: true, count: sourceResult.rows.length });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error.' });
+  } finally {
+    client.release();
   }
 };

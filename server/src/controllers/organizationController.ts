@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import pool from '../db/db';
+import pool, { logAudit } from '../db/db';
 
 // GET /orgs
 export const listOrgs = async (req: any, res: Response) => {

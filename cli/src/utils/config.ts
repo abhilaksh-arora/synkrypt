@@ -35,6 +35,10 @@ export function setProjectConfig(config: any) {
   fs.writeFileSync(PROJECT_CONFIG, JSON.stringify(config, null, 2));
 }
 
+export function deleteSession() {
+  if (fs.existsSync(SESSION_FILE)) fs.unlinkSync(SESSION_FILE);
+}
+
 export function requireProjectConfig() {
   const config = getProjectConfig();
   if (!config?.projectKey) {

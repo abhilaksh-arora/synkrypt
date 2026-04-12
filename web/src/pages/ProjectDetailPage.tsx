@@ -3,8 +3,11 @@ import { useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { 
   KeyRound, Plus, Eye, EyeOff, Copy, Trash2, 
-  Loader2, ShieldCheck, Terminal, Filter, Search
+  Loader2, ShieldCheck, Terminal, Filter, Search, FileUp, Lock, Users,
+  Pencil, ArrowLeftRight, Settings2, MoreVertical
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,12 +27,27 @@ export default function ProjectDetailPage() {
   const [secrets, setSecrets] = useState<any[]>([]);
   const [env, setEnv] = useState('dev');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('secrets');
+  const [projectMembers, setProjectMembers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [newSecret, setNewSecret] = useState({ key: '', value: '', environment: 'dev' });
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [orgMembers, setOrgMembers] = useState<any[]>([]);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkCanView, setBulkCanView] = useState(true);
+  const [newSecret, setNewSecret] = useState({ key: '', value: '', environment: 'dev', can_view: true });
   const [saving, setSaving] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  
+  const [isSyncOpen, setIsSyncOpen] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncForm, setSyncForm] = useState({ from: 'dev', to: 'staging' });
+  
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingSecret, setEditingSecret] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -42,12 +60,36 @@ export default function ProjectDetailPage() {
     try {
       const pData = await api.getProject(id!) as any;
       setProject(pData.project);
+      setProjectMembers(pData.members || []);
       const sData = await api.listSecrets(id!, env) as any;
       setSecrets(sData.secrets);
+
+      // Fetch org members for the "Add Member" list
+      const oData = await api.getOrg(pData.project.org_id);
+      setOrgMembers(oData.members || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddProjectMember = async (userId: string, environments: string[]) => {
+    try {
+      await api.addProjectMember(id!, { userId, environments });
+      await loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRemoveProjectMember = async (userId: string) => {
+    if (!confirm('Remove member from project?')) return;
+    try {
+      await api.removeProjectMember(id!, userId);
+      await loadData();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -58,8 +100,8 @@ export default function ProjectDetailPage() {
       await api.upsertSecret(id!, { ...newSecret, environment: env });
       await loadData();
       setIsAddOpen(false);
-      setNewSecret({ key: '', value: '', environment: env });
-      toast({ title: "Secret Injected", description: `${newSecret.key} is now live in ${env}.` });
+      setNewSecret({ key: '', value: '', environment: 'dev', can_view: true });
+      toast({ title: "Cryptographic Injection Success", description: `Primary key ${newSecret.key} has been persisted to ${env}.` });
     } catch (err: any) {
       toast({ title: "Encryption Error", description: err.message, variant: "destructive" });
     } finally {
@@ -78,6 +120,56 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleUpdateVisibility = async (secret: any, canView: boolean) => {
+    try {
+      await api.upsertSecret(id!, { 
+        key: secret.key, 
+        value: secret.value, 
+        can_view: canView, 
+        environment: env 
+      });
+      await loadData();
+      toast({ title: "Visibility Protocol Updated" });
+    } catch (err: any) {
+      toast({ title: "Update Failed", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.upsertSecret(id!, { 
+        key: editingSecret.key, 
+        value: editingSecret.value, 
+        can_view: editingSecret.can_view, 
+        environment: env 
+      });
+      await loadData();
+      setIsEditOpen(false);
+      toast({ title: "Secret Updated", description: `Key ${editingSecret.key} has been re-encrypted and saved.` });
+    } catch (err: any) {
+      toast({ title: "Update Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSync = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSyncLoading(true);
+    try {
+      await api.syncSecrets(id!, { fromEnv: syncForm.from, toEnv: syncForm.to });
+      await loadData();
+      setIsSyncOpen(false);
+      toast({ title: "Environment Sync Successful", description: `Secrets promoted from ${syncForm.from} to ${syncForm.to}.` });
+    } catch (err: any) {
+      toast({ title: "Sync Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
   const toggleReveal = (sid: string) => {
     setRevealed(prev => ({ ...prev, [sid]: !prev[sid] }));
   };
@@ -85,6 +177,45 @@ export default function ProjectDetailPage() {
   const copyToClipboard = (val: string) => {
     navigator.clipboard.writeText(val);
     toast({ title: "Copied to Clipboard" });
+  };
+
+  const handleBulkImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBulkSaving(true);
+    try {
+      const lines = bulkText.split('\n');
+      const parsedSecrets = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        
+        const match = trimmed.match(/^([^=]+)=(.*)$/);
+        if (match) {
+          let key = match[1].trim();
+          let value = match[2].trim();
+          
+          if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1);
+          }
+          
+          parsedSecrets.push({ key, value, can_view: bulkCanView });
+        }
+      }
+
+      if (parsedSecrets.length === 0) {
+        throw new Error("No valid KEY=VALUE pairs found.");
+      }
+
+      await api.bulkUpsertSecrets(id!, { environment: env, secrets: parsedSecrets });
+      await loadData();
+      setIsBulkOpen(false);
+      setBulkText('');
+      toast({ title: "Bulk Injection Complete", description: `Successfully injected ${parsedSecrets.length} secrets into ${env}.` });
+    } catch (err: any) {
+      toast({ title: "Bulk Import Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   const filteredSecrets = secrets.filter(s => s.key.toLowerCase().includes(search.toLowerCase()));
@@ -99,13 +230,25 @@ export default function ProjectDetailPage() {
     <div className="space-y-10">
       {/* Project Header Widget */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-           <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-[0.2em] text-[10px] mb-2">
-             <Terminal className="size-3" />
-             Infrastructure Identifier: <span className="opacity-60">{project?.slug}</span>
-           </div>
-           <h2 className="text-3xl font-bold tracking-tight text-foreground">{project?.name}</h2>
-        </div>
+         <div>
+            <div className="flex flex-wrap items-center gap-4 text-primary font-bold uppercase tracking-[0.2em] text-[10px] mb-2">
+              <div className="flex items-center gap-1.5">
+                <Terminal className="size-3" />
+                Infrastructure Identifier: <span className="opacity-60">{project?.slug}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                <KeyRound className="size-3" />
+                Project Key: <span className="font-mono text-[9px] lowercase tracking-normal">{project?.project_key}</span>
+                <button 
+                  onClick={() => copyToClipboard(project?.project_key)}
+                  className="ml-1 hover:text-foreground transition-colors p-0.5"
+                >
+                  <Copy className="size-2.5" />
+                </button>
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">{project?.name}</h2>
+         </div>
         <div className="flex items-center gap-3">
            <Tabs value={env} onValueChange={setEnv} className="w-auto">
              <TabsList className="h-12 rounded-xl bg-muted/40 p-1 border border-border/40 backdrop-blur-xl">
@@ -114,13 +257,32 @@ export default function ProjectDetailPage() {
                <TabsTrigger value="prod" className="rounded-lg px-5 data-[state=active]:bg-background data-[state=active]:shadow-lg font-bold text-xs uppercase tracking-widest">Production</TabsTrigger>
              </TabsList>
            </Tabs>
-           <Button onClick={() => setIsAddOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
-              <Plus className="mr-2 size-5" /> Add Secret
-           </Button>
+           {activeTab === 'secrets' && (
+             <>
+               <Button onClick={() => setIsAddOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
+                  <Plus className="mr-2 size-5" /> Add Secret
+               </Button>
+                <Button onClick={() => setIsBulkOpen(true)} variant="outline" className="rounded-xl px-6 h-12 font-bold border-border/40 hover:bg-muted/80">
+                   <FileUp className="mr-2 size-5" /> Bulk Import
+                </Button>
+                <Button onClick={() => setIsSyncOpen(true)} variant="secondary" className="rounded-xl px-6 h-12 font-bold border-border/40 bg-primary/5 hover:bg-primary/10 text-primary">
+                   <ArrowLeftRight className="mr-2 size-5" /> Sync Env
+                </Button>
+             </>
+           )}
         </div>
       </div>
 
-      {/* Stats / Info Row */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="bg-transparent border-b border-border/20 w-full justify-start rounded-none h-auto p-0 gap-8">
+          <TabsTrigger value="secrets" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-4 px-0 font-bold text-sm">Secrets Nexus</TabsTrigger>
+          <TabsTrigger value="team" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-4 px-0 font-bold text-sm">Team Members</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {activeTab === 'secrets' ? (
+        <>
+          {/* Stats / Info Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <Card className="p-6 rounded-[2rem] bg-card/30 backdrop-blur-xl border-border/40 flex items-center justify-between">
             <div>
@@ -200,29 +362,61 @@ export default function ProjectDetailPage() {
               ) : filteredSecrets.map(secret => (
                 <TableRow key={secret.id} className="border-border/10 group hover:bg-muted/10 transition-colors">
                   <TableCell className="pl-10">
-                     <div className="font-mono text-sm font-bold text-foreground bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/20 inline-block">
-                        {secret.key}
-                     </div>
+                     <div className="flex items-center gap-3">
+                        <div className="font-mono text-sm font-bold text-foreground bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/20 inline-block">
+                           {secret.key}
+                        </div>
+                        {!secret.can_view && (
+                          <button 
+                            onClick={() => handleUpdateVisibility(secret, true)}
+                            className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-amber-500/20 transition-colors"
+                            title="Click to mark as Public"
+                          >
+                            <Lock size={10} /> Restricted
+                          </button>
+                        )}
+                        {secret.can_view && (
+                           <button 
+                             onClick={() => handleUpdateVisibility(secret, false)}
+                             className="bg-primary/10 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-primary/20 transition-colors opacity-0 group-hover:opacity-100"
+                             title="Click to mark as Restricted"
+                           >
+                             <Eye size={10} /> Public
+                           </button>
+                        )}
+                      </div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                      <div className="flex items-center gap-3">
                         <div className={`px-4 py-2.5 rounded-xl border transition-all truncate max-w-sm ${revealed[secret.id] ? 'bg-background border-primary/20 text-foreground shadow-inner' : 'bg-muted/30 border-border/40 text-muted-foreground/40'}`}>
-                           {revealed[secret.id] ? secret.value : '••••••••••••••••••••••••••••••••'}
+                           {revealed[secret.id] ? (secret.can_view ? secret.value : 'SECRET_RESTRICTED') : '••••••••••••••••••••••••••••••••'}
                         </div>
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100">
-                           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={() => toggleReveal(secret.id)}>
-                              {revealed[secret.id] ? <EyeOff size={16} /> : <Eye size={16} />}
-                           </Button>
-                           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={() => copyToClipboard(secret.value)}>
-                              <Copy size={16} />
-                           </Button>
-                        </div>
+                        {secret.can_view && (
+                           <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100">
+                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={() => toggleReveal(secret.id)}>
+                                 {revealed[secret.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={() => copyToClipboard(secret.value)}>
+                                 <Copy size={16} />
+                              </Button>
+                           </div>
+                        )}
                      </div>
                   </TableCell>
                   <TableCell className="text-right pr-10">
-                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100" onClick={() => handleDelete(secret.id)}>
-                        <Trash2 size={18} />
-                     </Button>
+                     <div className="flex justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 rounded-xl text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100" 
+                          onClick={() => { setEditingSecret(secret); setIsEditOpen(true); }}
+                        >
+                           <Pencil size={18} />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100" onClick={() => handleDelete(secret.id)}>
+                           <Trash2 size={18} />
+                        </Button>
+                     </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -274,12 +468,276 @@ export default function ProjectDetailPage() {
                   required
                 />
               </div>
+              
+              <div className="flex items-center justify-between p-5 rounded-2xl bg-muted/20 border border-border/30">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold">Dashboard Viewing Protocol</Label>
+                    <p className="text-xs text-muted-foreground font-medium">If disabled, this key cannot be viewed in browser or exported to .env</p>
+                  </div>
+                  <Switch 
+                    checked={newSecret.can_view}
+                    onCheckedChange={(val) => setNewSecret(p => ({ ...p, can_view: val }))}
+                  />
+               </div>
             </form>
           </div>
           
           <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
             <Button form="secret-form" type="submit" disabled={saving} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
               {saving ? <Loader2 className="animate-spin" /> : "Inject Cryptographic Key"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
+        <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
+          <div className="p-10 pb-6">
+            <DialogHeader className="mb-6">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+                <FileUp size={32} />
+              </div>
+              <DialogTitle className="text-3xl font-bold tracking-tight">Bulk Secret Import</DialogTitle>
+              <DialogDescription className="text-base">
+                Paste your <span className="font-mono text-xs font-bold bg-muted/50 px-1.5 py-0.5 rounded">.env</span> file content below to inject multiple secrets into <span className="text-primary font-bold uppercase">{env}</span>.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form id="bulk-form" onSubmit={handleBulkImport} className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="bulk-text" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Environment Protocol Data (.env format)</Label>
+                <Textarea
+                  id="bulk-text"
+                  placeholder="DB_URL=postgres://...&#10;API_KEY=sk_test_...&#10;# This is a comment"
+                  className="min-h-[250px] rounded-2xl bg-muted/30 border-border/40 px-5 py-4 focus:bg-background transition-all font-mono text-sm leading-relaxed"
+                  value={bulkText}
+                  onChange={e => setBulkText(e.target.value)}
+                  required
+                />
+              </div>
+
+               <div className="flex items-center justify-between p-5 rounded-2xl bg-muted/20 border border-border/30">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold">Standard Visibility (Batch)</Label>
+                    <p className="text-xs text-muted-foreground font-medium">Apply this protocol to all secrets in this import batch</p>
+                  </div>
+                  <Switch 
+                    checked={bulkCanView}
+                    onCheckedChange={setBulkCanView}
+                  />
+               </div>
+            </form>
+          </div>
+          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
+            <Button form="bulk-form" type="submit" disabled={bulkSaving} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
+              {bulkSaving ? <Loader2 className="animate-spin" /> : `Import ${bulkText.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length} Detectable Keys`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+        </Dialog>
+      </>
+      ) : (
+        <div className="space-y-6">
+           <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-border/40 shadow-2xl overflow-hidden p-10">
+              <div className="flex justify-between items-end mb-10">
+                <div>
+                   <h3 className="text-2xl font-black tracking-tight flex items-center gap-3">
+                      <Users className="size-6 text-primary" /> Active Collaborators
+                   </h3>
+                   <p className="text-muted-foreground mt-2">Managing environment-level security clearance for this project.</p>
+                </div>
+                <Button onClick={() => setIsAddMemberOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
+                   <Plus className="mr-2 size-5" /> Add Project Member
+                </Button>
+              </div>
+
+              <div className="rounded-3xl border border-border/20 overflow-hidden bg-muted/5">
+                <Table>
+                  <TableHeader className="bg-muted/10">
+                    <TableRow className="border-border/10">
+                      <TableHead className="pl-8 py-5">Collaborator</TableHead>
+                      <TableHead>Clearance Levels</TableHead>
+                      <TableHead className="text-right pr-8">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projectMembers.map(m => (
+                      <TableRow key={m.id} className="border-border/10">
+                        <TableCell className="pl-8 py-5">
+                           <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                                 {m.name.charAt(0)}
+                              </div>
+                              <div>
+                                 <div className="font-bold">{m.name}</div>
+                                 <div className="text-xs text-muted-foreground">{m.email}</div>
+                              </div>
+                           </div>
+                        </TableCell>
+                        <TableCell>
+                           <div className="flex gap-2">
+                              {['dev', 'staging', 'prod'].map(level => (
+                                <div key={level} className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border ${m.environments?.includes(level) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted/20 border-border/10 text-muted-foreground/30'}`}>
+                                   {level}
+                                </div>
+                              ))}
+                           </div>
+                        </TableCell>
+                        <TableCell className="text-right pr-8">
+                           <Button variant="ghost" size="icon" className="rounded-xl hover:bg-destructive/10 hover:text-destructive" onClick={() => handleRemoveProjectMember(m.id)}>
+                              <Trash2 size={16} />
+                           </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+           </Card>
+
+           <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
+             <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
+               <div className="p-8">
+                 <DialogHeader className="mb-8">
+                   <DialogTitle className="text-3xl font-black tracking-tight">Access Provisioning</DialogTitle>
+                   <DialogDescription>
+                     Invite an organization member to this cryptographic project nexus.
+                   </DialogDescription>
+                 </DialogHeader>
+
+                 <div className="space-y-6">
+                    <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground ml-1">Select Member from Org</Label>
+                    <div className="rounded-2xl border border-border/30 overflow-y-auto max-h-[300px] bg-muted/10 scrollbar-none">
+                      {orgMembers.filter(u => !projectMembers.find(m => m.id === u.id)).map(u => (
+                        <button 
+                          key={u.id} 
+                          onClick={() => handleAddProjectMember(u.id, ['dev'])}
+                          className="w-full flex items-center justify-between p-4 border-b border-border/10 last:border-0 hover:bg-primary/5 transition-all text-left group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-muted/40 text-muted-foreground flex items-center justify-center text-xs font-bold group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                              {u.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium group-hover:font-bold transition-all">{u.name}</div>
+                              <div className="text-[10px] text-muted-foreground">{u.email}</div>
+                            </div>
+                          </div>
+                          <Plus className="size-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                        </button>
+                      ))}
+                      {orgMembers.filter(u => !projectMembers.find(m => m.id === u.id)).length === 0 && (
+                        <div className="p-10 text-center opacity-40 italic text-sm">No remaining org members to invite.</div>
+                      )}
+                    </div>
+                 </div>
+               </div>
+               <DialogFooter className="p-8 pt-0">
+                  <Button variant="outline" onClick={() => setIsAddMemberOpen(false)} className="w-full h-12 rounded-xl font-bold">Cancel Provisioning</Button>
+               </DialogFooter>
+             </DialogContent>
+           </Dialog>
+        </div>
+      )}
+      <Dialog open={isSyncOpen} onOpenChange={setIsSyncOpen}>
+        <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
+          <div className="p-10 pb-6">
+            <DialogHeader className="mb-6">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+                <ArrowLeftRight size={32} />
+              </div>
+              <DialogTitle className="text-3xl font-bold tracking-tight">Sync Environments</DialogTitle>
+              <DialogDescription className="text-base text-muted-foreground">
+                Clone all secrets from one environment cluster to another. This will **overwrite** duplicates.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form id="sync-form" onSubmit={handleSync} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Source Cluster</Label>
+                  <select 
+                    className="w-full h-12 rounded-xl bg-muted/30 border border-border/40 px-4 font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    value={syncForm.from}
+                    onChange={e => setSyncForm(p => ({ ...p, from: e.target.value }))}
+                  >
+                    <option value="dev">dev</option>
+                    <option value="staging">staging</option>
+                    <option value="prod">prod</option>
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Target Cluster</Label>
+                  <select 
+                    className="w-full h-12 rounded-xl bg-muted/30 border border-border/40 px-4 font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    value={syncForm.to}
+                    onChange={e => setSyncForm(p => ({ ...p, to: e.target.value }))}
+                  >
+                    <option value="dev">dev</option>
+                    <option value="staging">staging</option>
+                    <option value="prod">prod</option>
+                  </select>
+                </div>
+              </div>
+
+               <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                   <ShieldCheck className="text-amber-500 size-6 shrink-0" />
+                   <p className="text-xs text-amber-500/80 font-medium font-mono leading-relaxed lowercase">
+                     Warning: This protocol will replicate all encrypted payloads from <span className="font-bold underline">{syncForm.from}</span> into <span className="font-bold underline">{syncForm.to}</span>. Existing keys in target will be updated.
+                   </p>
+               </div>
+            </form>
+          </div>
+          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
+            <Button form="sync-form" type="submit" disabled={syncLoading} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
+              {syncLoading ? <Loader2 className="animate-spin" /> : `Promote Secrets to ${syncForm.to.toUpperCase()}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
+          <div className="p-10 pb-6">
+            <DialogHeader className="mb-8">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+                <Pencil size={32} />
+              </div>
+              <DialogTitle className="text-3xl font-bold tracking-tight">Modify Secret Protocol</DialogTitle>
+              <DialogDescription className="text-base text-muted-foreground">
+                Updating <span className="text-primary font-black font-mono">{(editingSecret as any)?.key}</span> in the <span className="uppercase font-bold">{env}</span> cluster.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form id="edit-form" onSubmit={handleEdit} className="space-y-6">
+              <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Secure Variable Value</Label>
+                <Input
+                  type="password"
+                  placeholder="Enter new value..."
+                  className="h-14 rounded-2xl bg-muted/30 border-border/40 px-5 focus:bg-background transition-all font-mono"
+                  value={editingSecret?.value || ''}
+                  onChange={e => setEditingSecret(p => ({ ...p, value: e.target.value }))}
+                  required
+                />
+              </div>
+              
+              <div className="flex items-center justify-between p-5 rounded-2xl bg-muted/20 border border-border/30">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-bold">Dashboard Viewing Protocol</Label>
+                    <p className="text-xs text-muted-foreground font-medium">Toggle visibility of this key in the nexus UI.</p>
+                  </div>
+                  <Switch 
+                    checked={editingSecret?.can_view}
+                    onCheckedChange={(val) => setEditingSecret(p => ({ ...p, can_view: val }))}
+                  />
+               </div>
+            </form>
+          </div>
+          
+          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
+            <Button form="edit-form" type="submit" disabled={saving} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
+              {saving ? <Loader2 className="animate-spin" /> : "Commit Modification"}
             </Button>
           </DialogFooter>
         </DialogContent>

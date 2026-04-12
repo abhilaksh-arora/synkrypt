@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useParams, useNavigate, Outlet } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Building2, FolderKanban, KeyRound, Users, ShieldAlert, 
-  LogOut, Settings, ChevronRight, LockKeyhole, BookOpen, ShieldCheck, Database
+  LogOut, Settings, ChevronRight, LockKeyhole, BookOpen, ShieldCheck, ShieldAlert,
+  Building2, FolderKanban, Users, KeyRound
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
@@ -67,10 +67,7 @@ export default function AppLayout({ title }: AppLayoutProps) {
   const orgMenuItems = orgId ? [
     { title: "Projects", url: `/orgs/${orgId}`, icon: FolderKanban },
     ...(isAdmin ? [
-      { title: "Members", url: `/orgs/${orgId}/members`, icon: Users }, // Future enhancement
-      { title: "Shared Sets", url: `#`, icon: Database },
-      { title: "Rules", url: `#`, icon: ShieldCheck },
-      { title: "Audit Logs", url: `#`, icon: ShieldAlert },
+      { title: "Audit Logs", url: "/audit-logs", icon: ShieldAlert },
     ] : []),
   ] : [];
 

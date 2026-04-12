@@ -1,4 +1,4 @@
-const BASE = process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
+const BASE = (import.meta as any).env.VITE_SYNKRYPT_SERVER_URL || "http://localhost:2809";
 
 let authTokenGetter: (() => string | null) | null = null;
 
@@ -89,6 +89,15 @@ export const api = {
     request("GET", `/projects/${pid}/secrets?env=${env}`),
   upsertSecret: (pid: string, body: any) =>
     request("POST", `/projects/${pid}/secrets`, body),
+  bulkUpsertSecrets: (pid: string, body: { environment: string; secrets: any[] }) =>
+    request("POST", `/projects/${pid}/secrets/bulk`, body),
   deleteSecret: (pid: string, sid: string) =>
     request("DELETE", `/projects/${pid}/secrets/${sid}`),
+  
+  // Audit Logs
+  listAuditLogs: () => request("GET", "/audit-logs"),
+
+  // Sync
+  syncSecrets: (pid: string, body: { fromEnv: string; toEnv: string }) =>
+    request("POST", `/projects/${pid}/secrets/sync`, body),
 };

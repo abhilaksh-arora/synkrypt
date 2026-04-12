@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { Request, Response } from 'express';
-import pool, { hashSessionToken } from '../db/db';
+import pool, { hashSessionToken, logAudit } from '../db/db';
 
 const SESSION_COOKIE = 'synkrypt_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14; // 14 days
@@ -97,6 +97,7 @@ export const login = async (req: Request, res: Response) => {
 
     const token = await createSession(user.id);
     res.setHeader('Set-Cookie', `${SESSION_COOKIE}=${token}; ${cookieOptions()}`);
+    await logAudit(user.id, null, 'login', `User logged in: ${user.email}`);
     res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
   } catch (err) {
     console.error(err);

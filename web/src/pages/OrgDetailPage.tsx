@@ -17,8 +17,11 @@ export default function OrgDetailPage() {
   const [loading, setLoading] = useState(true);
   
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
+  const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', slug: '' });
   const [savingProject, setSavingProject] = useState(false);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -30,12 +33,35 @@ export default function OrgDetailPage() {
     try {
       const orgData = await api.getOrg(id!);
       setOrg(orgData.org);
+      setMembers(orgData.members || []);
       const projectsData = await api.listProjects(id!);
       setProjects(projectsData.projects);
+      
+      const usersData = await api.listUsers();
+      setAllUsers(usersData.users);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddMember = async (userId: string) => {
+    try {
+      await api.addOrgMember(id!, { userId });
+      await loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!confirm('Remove this member?')) return;
+    try {
+      await api.removeOrgMember(id!, userId);
+      await loadData();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -92,7 +118,7 @@ export default function OrgDetailPage() {
             </div>
             
             <div className="flex flex-col gap-3 shrink-0">
-               <Button variant="outline" className="h-12 rounded-xl px-6 border-border/60 font-bold hover:bg-muted/80">
+               <Button onClick={() => setIsMembersDialogOpen(true)} variant="outline" className="h-12 rounded-xl px-6 border-border/60 font-bold hover:bg-muted/80">
                   <Users className="size-4 mr-2" /> Manage Members
                </Button>
                <Button variant="outline" className="h-12 rounded-xl px-6 border-border/60 font-bold hover:bg-muted/80">
@@ -202,6 +228,72 @@ export default function OrgDetailPage() {
             <Button form="project-form" type="submit" disabled={savingProject} className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20">
               {savingProject ? <Loader2 className="animate-spin" /> : "Deploy Identity"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
+        <DialogContent className="sm:max-w-[550px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
+          <div className="p-8">
+            <DialogHeader className="mb-8">
+              <DialogTitle className="text-3xl font-black tracking-tight">Node Members</DialogTitle>
+              <DialogDescription>
+                Assign authorized system users to this organization nexus.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground ml-1">Current Membership</Label>
+                <div className="rounded-2xl border border-border/30 overflow-hidden bg-muted/10">
+                  {members.map(m => (
+                    <div key={m.id} className="flex items-center justify-between p-4 border-b border-border/10 last:border-0 hover:bg-muted/20 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                          {m.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold">{m.name}</div>
+                          <div className="text-[10px] text-muted-foreground">{m.email}</div>
+                        </div>
+                      </div>
+                      {m.id !== user?.id && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveMember(m.id)}>
+                          <Plus className="rotate-45 size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground ml-1">System Users (Select to Add)</Label>
+                <div className="rounded-2xl border border-border/30 overflow-y-auto max-h-[200px] bg-muted/10 scrollbar-none">
+                  {allUsers.filter(u => !members.find(m => m.id === u.id)).map(u => (
+                    <button 
+                      key={u.id} 
+                      onClick={() => handleAddMember(u.id)}
+                      className="w-full flex items-center justify-between p-4 border-b border-border/10 last:border-0 hover:bg-primary/5 transition-all text-left group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted/40 text-muted-foreground flex items-center justify-center text-xs font-bold group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                          {u.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium group-hover:font-bold transition-all">{u.name}</div>
+                          <div className="text-[10px] text-muted-foreground">{u.email}</div>
+                        </div>
+                      </div>
+                      <Plus className="size-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="p-8 pt-0">
+             <Button variant="outline" onClick={() => setIsMembersDialogOpen(false)} className="w-full h-12 rounded-xl font-bold">Close Nexus Control</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

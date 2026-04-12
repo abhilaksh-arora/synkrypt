@@ -16,6 +16,7 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
 import DocsPage from './pages/DocsPage';
+import AuditLogsPage from './pages/AuditLogsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -63,6 +64,7 @@ createRoot(document.getElementById('root')!).render(
                 
                 {/* Admin Only */}
                 <Route path="/users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+                <Route path="/audit-logs" element={<AdminRoute><AuditLogsPage /></AdminRoute>} />
               </Route>
             </Routes>
           </BrowserRouter>

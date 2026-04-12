@@ -1,8 +1,10 @@
 import express from 'express';
+import type { Request, Response } from 'express';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import organizationRoutes from './routes/organizationRoutes';
 import projectRoutes from './routes/projectRoutes';
+import auditRoutes from './routes/auditRoutes';
 
 const app = express();
 
@@ -29,5 +31,6 @@ app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/orgs', organizationRoutes);
 app.use('/projects', projectRoutes);   // standalone /projects/:id, /projects/by-key/:key
+app.use('/audit-logs', auditRoutes);
 
 export default app;

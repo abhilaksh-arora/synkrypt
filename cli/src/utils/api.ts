@@ -44,4 +44,5 @@ export const api = {
     request("GET", `/projects/${projectId}/secrets/pull?env=${env}`),
   runSecrets: (projectId: string, env: string) =>
     request("GET", `/projects/${projectId}/secrets/run?env=${env}`),
+  getMe: () => request("GET", "/auth/me"),
 };

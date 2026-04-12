@@ -124,6 +124,20 @@ program
   });
 
 program
+  .command("whoami")
+  .description("Display the current logged-in user identity")
+  .action(async () => {
+    try {
+      const data = (await api.getMe()) as any;
+      console.log(`\n👤 ${data.user.name.toUpperCase()} (${data.user.email})`);
+      console.log(`🔑 Role: ${data.user.role}`);
+      console.log("───────────────────────────────────\n");
+    } catch (err: any) {
+      console.error(`❌ Identification failed: ${err.message}`);
+    }
+  });
+
+program
   .command("run")
   .description(
     "Inject ALL secrets into the process environment and run a command",

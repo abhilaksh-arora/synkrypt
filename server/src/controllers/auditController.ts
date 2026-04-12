@@ -1,27 +1,30 @@
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import pool from '../db/db';
 
-export const listLogs = async (req: any, res: Response) => {
+export const getProjectAuditLogs = async (req: any, res: Response) => {
+  const { projectId } = req.params;
+
   try {
+    // We join with users to get the actor's name and email
     const result = await pool.query(
       `SELECT 
-        l.id, 
-        l.action, 
-        l.details, 
-        l.created_at,
-        u.name as user_name,
-        u.email as user_email,
-        p.name as project_name
-       FROM audit_logs l
-       LEFT JOIN users u ON l.user_id = u.id
-       LEFT JOIN projects p ON l.project_id = p.id
-       ORDER BY l.created_at DESC
-       LIMIT 100`
+        id, 
+        action, 
+        resource, 
+        metadata, 
+        created_at,
+        actor_name,
+        actor_email
+       FROM audit_logs
+       WHERE project_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [projectId]
     );
 
     res.json({ logs: result.rows });
   } catch (err) {
-    console.error(err);
+    console.error('Fetch audit logs failed:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 };

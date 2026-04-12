@@ -30,6 +30,11 @@ export default function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState('secrets');
   const [projectMembers, setProjectMembers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [isWebhookOpen, setIsWebhookOpen] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [savingWebhook, setSavingWebhook] = useState(false);
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
@@ -78,6 +83,24 @@ export default function ProjectDetailPage() {
       setLoading(false);
     }
   };
+
+  const loadAuditLogs = async () => {
+    setAuditLoading(true);
+    try {
+      const data = await api.getAuditLogs(id!) as any;
+      setAuditLogs(data.logs || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'audit') {
+      loadAuditLogs();
+    }
+  }, [activeTab]);
 
   const handleAddProjectMember = async (userId: string, environments: string[]) => {
     try {
@@ -188,6 +211,23 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleAddWebhook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingWebhook(true);
+    try {
+      // Create a temporary endpoint or use existing
+      // For now, we'll implement a simple POST in the background
+      await api.request('POST', `/projects/${id}/webhooks`, { url: webhookUrl });
+      setIsWebhookOpen(false);
+      setWebhookUrl('');
+      toast({ title: "Webhook Configured", description: "Real-time security alerts are now active." });
+    } catch (err: any) {
+      toast({ title: "Configuration Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingWebhook(false);
+    }
+  };
+
   const toggleReveal = (sid: string) => {
     setRevealed(prev => ({ ...prev, [sid]: !prev[sid] }));
   };
@@ -245,56 +285,79 @@ export default function ProjectDetailPage() {
   );
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* Project Header Widget */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-         <div>
-            <div className="flex flex-wrap items-center gap-4 text-primary font-bold uppercase tracking-[0.2em] text-[10px] mb-2">
-              <div className="flex items-center gap-1.5">
-                <Terminal className="size-3" />
-                Infrastructure Identifier: <span className="opacity-60">{project?.slug}</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+      <div className="rounded-[2rem] border border-border/30 bg-card/30 p-6 shadow-xl shadow-primary/5 backdrop-blur-xl md:p-7">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-primary/80">
+              <Terminal className="size-3" />
+              <span>Infrastructure Identifier</span>
+            </div>
+            <div className="space-y-3">
+              <div className="font-mono text-sm text-muted-foreground">{project?.slug}</div>
+              <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">{project?.name}</h2>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                 <KeyRound className="size-3" />
-                Project Key: <span className="font-mono text-[9px] lowercase tracking-normal">{project?.project_key}</span>
-                <button 
+                <span>Project Key</span>
+                <span className="font-mono text-[11px] lowercase tracking-normal text-primary/80">{project?.project_key}</span>
+                <button
                   onClick={() => copyToClipboard(project?.project_key)}
-                  className="ml-1 hover:text-foreground transition-colors p-0.5"
+                  className="rounded-full p-1 transition-colors hover:bg-primary/10 hover:text-foreground"
                 >
-                  <CopyIcon className="size-2.5" />
+                  <CopyIcon className="size-3" />
                 </button>
               </div>
+              <div className="rounded-full border border-border/40 bg-background/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                {projectMembers.length} collaborators
+              </div>
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">{project?.name}</h2>
-         </div>
-        <div className="flex items-center gap-3">
-           <Tabs value={env} onValueChange={setEnv} className="w-auto">
-             <TabsList className="h-12 rounded-xl bg-muted/40 p-1 border border-border/40 backdrop-blur-xl">
-               <TabsTrigger value="dev" className="rounded-lg px-5 data-[state=active]:bg-background data-[state=active]:shadow-lg font-bold text-xs uppercase tracking-widest">Development</TabsTrigger>
-               <TabsTrigger value="staging" className="rounded-lg px-5 data-[state=active]:bg-background data-[state=active]:shadow-lg font-bold text-xs uppercase tracking-widest">Staging</TabsTrigger>
-               <TabsTrigger value="prod" className="rounded-lg px-5 data-[state=active]:bg-background data-[state=active]:shadow-lg font-bold text-xs uppercase tracking-widest">Production</TabsTrigger>
-             </TabsList>
-           </Tabs>
-           {user?.role === 'admin' && (
-              <>
-                <Button onClick={() => setIsAddOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
-                   <PlusIcon className="mr-2 size-5" /> Add Secret
+          </div>
+
+          <div className="flex w-full flex-col gap-3 xl:max-w-4xl xl:items-end">
+            <Tabs value={env} onValueChange={setEnv} className="w-full xl:w-auto">
+              <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl border border-border/40 bg-muted/30 p-1.5 backdrop-blur-xl xl:w-auto xl:min-w-[420px]">
+                <TabsTrigger value="dev" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-[11px] uppercase tracking-[0.18em]">
+                  Development
+                </TabsTrigger>
+                <TabsTrigger value="staging" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-[11px] uppercase tracking-[0.18em]">
+                  Staging
+                </TabsTrigger>
+                <TabsTrigger value="prod" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-[11px] uppercase tracking-[0.18em]">
+                  Production
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {user?.role === 'admin' && (
+              <div className="flex flex-wrap gap-3 xl:justify-end">
+                <Button onClick={() => setIsAddOpen(true)} className="h-11 rounded-xl px-5 font-bold shadow-lg shadow-primary/15 hover-elevate">
+                  <PlusIcon className="mr-2 size-4" /> Add Secret
                 </Button>
-                <Button onClick={() => setIsBulkOpen(true)} variant="outline" className="rounded-xl px-6 h-12 font-bold border-border/40 hover:bg-muted/80">
-                   <FileUp className="mr-2 size-5" /> Bulk Import
+                <Button onClick={() => setIsBulkOpen(true)} variant="outline" className="h-11 rounded-xl px-5 font-bold border-border/40 bg-background/70 hover:bg-muted/70">
+                  <FileUp className="mr-2 size-4" /> Bulk Import
                 </Button>
-                <Button onClick={() => setIsSyncOpen(true)} variant="secondary" className="rounded-xl px-6 h-12 font-bold border-border/40 bg-primary/5 hover:bg-primary/10 text-primary">
-                   <ArrowLeftRight className="mr-2 size-5" /> Sync Env
+                <Button onClick={() => setIsSyncOpen(true)} variant="secondary" className="h-11 rounded-xl px-5 font-bold border border-primary/15 bg-primary/5 text-primary hover:bg-primary/10">
+                  <ArrowLeftRight className="mr-2 size-4" /> Sync Env
                 </Button>
-             </>
-           )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-transparent border-b border-border/20 w-full justify-start rounded-none h-auto p-0 gap-8">
-          <TabsTrigger value="secrets" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-4 px-0 font-bold text-sm">Secrets Nexus</TabsTrigger>
-          <TabsTrigger value="team" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-4 px-0 font-bold text-sm">Team Members</TabsTrigger>
+        <TabsList className="h-auto w-full justify-start gap-3 rounded-2xl border border-border/20 bg-muted/10 p-1.5">
+          <TabsTrigger value="secrets" className="rounded-xl px-4 py-2.5 font-bold text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            Secrets Nexus
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="rounded-xl px-4 py-2.5 font-bold text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            Audit Trail
+          </TabsTrigger>
+          <TabsTrigger value="team" className="rounded-xl px-4 py-2.5 font-bold text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            Team Members
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -554,79 +617,198 @@ export default function ProjectDetailPage() {
         </DialogContent>
         </Dialog>
       </>
-      ) : (
+      ) : activeTab === 'audit' ? (
         <div className="space-y-6">
            <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-border/40 shadow-2xl overflow-hidden p-10">
               <div className="flex justify-between items-end mb-10">
                 <div>
                    <h3 className="text-2xl font-black tracking-tight flex items-center gap-3">
-                      <Users className="size-6 text-primary" /> Active Collaborators
+                      <Terminal className="size-6 text-primary" /> Forensic Audit Trail
                    </h3>
-                   <p className="text-muted-foreground mt-2">Managing environment-level security clearance for this project.</p>
+                   <p className="text-muted-foreground mt-2">Real-time monitoring of all cryptographic actions and secret access.</p>
                 </div>
-                 <Button onClick={() => setIsAddMemberOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
-                    <PlusIcon className="mr-2 size-5" /> Add Project Member
-                 </Button>
+                <div className="flex gap-3">
+                   <Button variant="outline" onClick={() => setIsWebhookOpen(true)} className="rounded-xl border-border/40 font-bold bg-primary/5 text-primary border-primary/20">
+                      <ShieldCheck className="size-4 mr-2" /> Webhooks
+                   </Button>
+                   <Button variant="outline" onClick={loadAuditLogs} disabled={auditLoading} className="rounded-xl border-border/40 font-bold">
+                      {auditLoading ? <Loader2 className="animate-spin size-4 mr-2" /> : <ArrowLeftRight className="size-4 mr-2 rotate-90" />} Refresh
+                   </Button>
+                </div>
               </div>
 
-              <div className="rounded-3xl border border-border/20 overflow-hidden bg-muted/5">
-                <Table>
-                  <TableHeader className="bg-muted/10">
-                    <TableRow className="border-border/10">
-                      <TableHead className="pl-8 py-5">Collaborator</TableHead>
-                      <TableHead>Clearance Levels</TableHead>
-                      <TableHead className="text-right pr-8">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {projectMembers.map(m => (
-                      <TableRow key={m.id} className="border-border/10">
-                        <TableCell className="pl-8 py-5">
-                           <div className="flex items-center gap-4">
-                              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-                                 {m.name.charAt(0)}
-                              </div>
+              <div className="relative">
+                {/* Timeline Line */}
+                <div className="absolute left-10 top-0 bottom-0 w-px bg-border/20" />
+
+                <div className="space-y-8 relative">
+                   {auditLogs.length === 0 && !auditLoading && (
+                     <div className="py-20 text-center opacity-30">
+                        <AlertCircle size={48} className="mx-auto mb-4" />
+                        <p className="font-bold italic">No logs recorded for this infrastructure yet.</p>
+                     </div>
+                   )}
+                   
+                   {auditLogs.map((log) => (
+                     <div key={log.id} className="flex gap-10 group">
+                        <div className="relative z-10">
+                           <div className={`h-20 w-20 rounded-3xl flex items-center justify-center border-2 transition-all ${
+                             log.action === 'secret_read' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 scale-110' :
+                             log.action.includes('write') ? 'bg-primary/10 border-primary/20 text-primary' :
+                             'bg-muted/10 border-border/20 text-muted-foreground'
+                           }`}>
+                              {log.action === 'secret_read' ? <EyeIcon size={32} /> : 
+                               log.action.includes('write') ? <ShieldCheck size={32} /> :
+                               <Terminal size={32} />}
+                           </div>
+                        </div>
+                        <div className="flex-1 pb-8 border-b border-border/10">
+                           <div className="flex justify-between items-start">
                               <div>
-                                 <div className="font-bold">{m.name}</div>
-                                 <div className="text-xs text-muted-foreground">{m.email}</div>
+                                 <div className="flex items-center gap-3">
+                                    <h4 className="font-black text-lg uppercase tracking-tight">{log.action.replace(/_/g, ' ')}</h4>
+                                    {log.action === 'secret_read' && (
+                                      <span className="bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg shadow-amber-500/20">RESTRICTED ACCESS</span>
+                                    )}
+                                 </div>
+                                 <p className="text-muted-foreground text-sm mt-1">
+                                    Action performed by <span className="text-foreground font-bold">{log.actor_name || 'System Operator'}</span>
+                                    <span className="mx-2 text-border">|</span>
+                                    <span className="font-mono text-xs">{log.actor_email}</span>
+                                 </p>
+                              </div>
+                              <div className="text-right">
+                                 <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                    {new Date(log.created_at).toLocaleDateString()}
+                                 </div>
+                                 <div className="text-[10px] text-primary font-mono mt-1">
+                                    {new Date(log.created_at).toLocaleTimeString()}
+                                 </div>
                               </div>
                            </div>
-                        </TableCell>
-                        <TableCell>
-                           <div className="flex gap-2">
-                              {['dev', 'staging', 'prod'].map(level => (
-                                <div key={level} className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border ${m.environments?.includes(level) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted/20 border-border/10 text-muted-foreground/30'}`}>
-                                   {level}
+                           {log.metadata && (
+                             <div className="mt-4 p-4 rounded-2xl bg-muted/20 border border-border/10 font-mono text-[10px] text-muted-foreground/80 grid grid-cols-2 gap-4">
+                                <div>
+                                   <span className="opacity-40 uppercase block mb-1">Resource Context</span>
+                                   {log.metadata.details || log.metadata.key || "System Level"}
                                 </div>
-                              ))}
-                           </div>
-                        </TableCell>
-                        <TableCell className="text-right pr-8">
-                           <div className="flex justify-end gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="rounded-xl hover:bg-primary/10 hover:text-primary transition-colors" 
-                                title="Edit Security Clearance"
-                                onClick={() => {
-                                  setClearanceMember(m);
-                                  setClearanceEnvs(m.environments || []);
-                                  setIsClearanceOpen(true);
-                                }}
-                              >
-                                 <Settings2 size={16} />
-                              </Button>
-                               <Button variant="ghost" size="icon" className="rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors" title="Revoke All Access" onClick={() => handleRemoveProjectMember(m.id)}>
-                                 <TrashIcon size={16} />
-                               </Button>
-                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                                <div>
+                                   <span className="opacity-40 uppercase block mb-1">Injected Env</span>
+                                   <span className="text-primary font-bold">{log.metadata.env || "dev"}</span>
+                                </div>
+                             </div>
+                           )}
+                        </div>
+                     </div>
+                   ))}
+                </div>
               </div>
            </Card>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <Card className="overflow-hidden rounded-[2.25rem] border-border/30 bg-card/40 p-6 shadow-2xl backdrop-blur-3xl md:p-8">
+            <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <Users className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black tracking-tight">Active Collaborators</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Environment-level access is organized by collaborator, with quick clearance edits for each member.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="rounded-full border border-border/30 bg-background/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    {projectMembers.length} members
+                  </div>
+                  <div className="rounded-full border border-primary/20 bg-primary/8 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                    {env.toUpperCase()} focus
+                  </div>
+                </div>
+              </div>
+              <Button onClick={() => setIsAddMemberOpen(true)} className="h-11 rounded-xl px-5 font-bold shadow-lg shadow-primary/15 hover-elevate">
+                <PlusIcon className="mr-2 size-4" /> Add Project Member
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {projectMembers.length === 0 ? (
+                <div className="rounded-[1.75rem] border border-dashed border-border/30 bg-muted/10 px-6 py-16 text-center">
+                  <Users className="mx-auto mb-4 size-10 text-muted-foreground/40" />
+                  <p className="text-lg font-bold">No collaborators added yet.</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Invite a member to start managing project-level access.</p>
+                </div>
+              ) : (
+                projectMembers.map(m => (
+                  <div
+                    key={m.id}
+                    className="rounded-[1.75rem] border border-border/20 bg-background/60 p-5 transition-colors hover:border-primary/20 hover:bg-primary/[0.03] md:p-6"
+                  >
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 font-bold text-primary">
+                          {m.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-base font-bold">{m.name}</div>
+                          <div className="truncate text-sm text-muted-foreground">{m.email}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-1 flex-col gap-3 lg:max-w-xl">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          Clearance Levels
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {['dev', 'staging', 'prod'].map(level => (
+                            <div
+                              key={level}
+                              className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${
+                                m.environments?.includes(level)
+                                  ? 'border-primary/30 bg-primary/10 text-primary'
+                                  : 'border-border/20 bg-muted/15 text-muted-foreground/45'
+                              }`}
+                            >
+                              {level}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end lg:self-auto">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-xl border border-border/20 bg-background/70 hover:bg-primary/10 hover:text-primary transition-colors"
+                          title="Edit Security Clearance"
+                          onClick={() => {
+                            setClearanceMember(m);
+                            setClearanceEnvs(m.environments || []);
+                            setIsClearanceOpen(true);
+                          }}
+                        >
+                          <Settings2 size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-xl border border-border/20 bg-background/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                          title="Revoke All Access"
+                          onClick={() => handleRemoveProjectMember(m.id)}
+                        >
+                          <TrashIcon size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
 
            <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
              <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
@@ -831,6 +1013,50 @@ export default function ProjectDetailPage() {
           <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
             <Button form="clearance-form" type="submit" disabled={updatingClearance} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
               {updatingClearance ? <Loader2 className="animate-spin" /> : "Authorize Clearance"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+       <Dialog open={isWebhookOpen} onOpenChange={setIsWebhookOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
+          <div className="p-10 pb-6">
+            <DialogHeader className="mb-8">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+                <ShieldCheck size={32} />
+              </div>
+              <DialogTitle className="text-3xl font-bold tracking-tight">Security Webhooks</DialogTitle>
+              <DialogDescription className="text-base">
+                Configure a Slack or Discord webhook to receive real-time alerts when **Restricted Secrets** are accessed.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form id="webhook-form" onSubmit={handleAddWebhook} className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="w-url" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Webhook URL</Label>
+                <Input
+                  id="w-url"
+                  placeholder="https://hooks.slack.com/services/..."
+                  className="h-14 rounded-2xl bg-muted/30 border-border/40 px-5 focus:bg-background transition-all font-mono"
+                  value={webhookUrl}
+                  onChange={e => setWebhookUrl(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                 <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-2">
+                    <AlertCircle size={12} /> Privacy Notice
+                 </p>
+                 <p className="text-[11px] text-amber-500/80 leading-relaxed">
+                    Synkrypt will only send metadata (Actor, Environment, Secret Key). The actual decrypted value is **never** sent via webhook.
+                 </p>
+              </div>
+            </form>
+          </div>
+          
+          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
+            <Button form="webhook-form" type="submit" disabled={savingWebhook} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
+              {savingWebhook ? <Loader2 className="animate-spin" /> : "Deploy Security Webhook"}
             </Button>
           </DialogFooter>
         </DialogContent>

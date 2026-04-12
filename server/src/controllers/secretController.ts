@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import type { Request, Response } from 'express';
 import pool, { logAudit } from '../db/db';
 import { decryptMasterKey } from './projectController';
+import { notifyRestrictedAccess } from '../utils/notifier';
 
 // ── AES-256-GCM helpers ─────────────────────────────────────────────────────
 
@@ -112,7 +113,7 @@ export const upsertSecret = async (req: any, res: Response) => {
       [projectId, environment, key, JSON.stringify(encrypted_value), can_view ?? true, req.user.id]
     );
 
-    await logAudit(req.user.id, projectId, 'secret_write', `key=${key} env=${environment}`);
+    logAudit(req.user.id, projectId, 'secret_write', { key, env: environment });
     res.json({ secret: result.rows[0] });
   } catch (err) {
     console.error(err);
@@ -157,7 +158,7 @@ export const pullSecrets = async (req: any, res: Response) => {
       secrets[row.key] = decrypt(row.encrypted_value, masterKey);
     }
 
-    await logAudit(req.user.id, projectId, 'secret_read', `pull env=${env}`);
+    logAudit(req.user.id, projectId, 'secret_read', { env, method: 'pull' });
     res.json({ secrets });
   } catch (err) {
     console.error(err);
@@ -191,10 +192,12 @@ export const runSecrets = async (req: any, res: Response) => {
       secrets[row.key] = val;
       if (row.can_view === false) {
         restrictedValues.push(val);
+        // Trigger real-time alert for restricted access
+        notifyRestrictedAccess(projectId, req.user.id, row.key, env);
       }
     }
 
-    await logAudit(req.user.id, projectId, 'secret_read', `run env=${env}`);
+    logAudit(req.user.id, projectId, 'secret_read', { env, method: 'run' });
     res.json({ secrets, restrictedValues });
   } catch (err) {
     console.error(err);

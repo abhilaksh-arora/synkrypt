@@ -4,6 +4,7 @@ import {
   addMember, removeMember, getProjectByKey
 } from '../controllers/projectController';
 import { requireAuth, requireAdmin } from '../middleware/authMiddleware';
+import { addWebhook } from '../controllers/webhookController';
 import secretRoutes from './secretRoutes';
 
 const router = Router({ mergeParams: true });
@@ -19,6 +20,7 @@ router.put('/:id', requireAuth, requireAdmin, updateProject);
 router.delete('/:id', requireAuth, requireAdmin, deleteProject);
 router.post('/:id/members', requireAuth, requireAdmin, addMember);
 router.delete('/:id/members/:userId', requireAuth, requireAdmin, removeMember);
+router.post('/:id/webhooks', requireAuth, addWebhook);
 
 // Nest secrets under projects
 router.use('/:projectId/secrets', secretRoutes);

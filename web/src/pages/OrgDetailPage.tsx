@@ -91,38 +91,44 @@ export default function OrgDetailPage() {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       {/* Header Info */}
-      <Card className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-border/40 shadow-2xl relative overflow-hidden group">
-         <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Building2 size={180} />
+      <Card className="relative overflow-hidden rounded-[2.25rem] border-border/30 bg-card/35 p-6 shadow-xl shadow-primary/5 backdrop-blur-3xl md:p-8">
+         <div className="absolute right-0 top-0 p-8 opacity-[0.06]">
+            <Building2 size={160} />
          </div>
-         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-            <div className="space-y-3">
-               <div className="flex items-center gap-4 text-primary font-bold uppercase tracking-[0.3em] text-[10px]">
-                  <span className="h-1 w-6 bg-primary rounded-full" /> 
-                  Organization Profile
+         <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="space-y-4">
+               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-primary/80">
+                  <Building2 className="size-3" />
+                  <span>Organization Profile</span>
                </div>
-               <h2 className="text-3xl font-bold tracking-tight text-foreground">{org.name}</h2>
-               <p className="text-muted-foreground text-lg max-w-xl leading-relaxed">
-                  {org.description || "Active node in the Synkrypt distributed secrets nexus. Managing secure project environments."}
-               </p>
-               <div className="flex gap-4 pt-4">
-                  <div className="px-5 py-2.5 rounded-2xl bg-muted/30 border border-border/40 text-xs font-mono">
-                     SLUG: <span className="text-foreground font-bold">{org.slug}</span>
+               <div className="space-y-3">
+                  <div className="font-mono text-sm text-muted-foreground">{org.slug}</div>
+                  <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">{org.name}</h2>
+                  <p className="max-w-2xl text-muted-foreground leading-relaxed">
+                     {org.description || "Active node in the Synkrypt distributed secrets nexus. Managing secure project environments."}
+                  </p>
+               </div>
+               <div className="flex flex-wrap gap-3 pt-1">
+                  <div className="rounded-full border border-primary/20 bg-primary/8 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                     {projects.length} projects
                   </div>
-                  <div className="px-5 py-2.5 rounded-2xl bg-muted/30 border border-border/40 text-xs font-mono">
-                     ID: <span className="text-foreground font-bold">{org.id.slice(0, 12)}...</span>
+                  <div className="rounded-full border border-border/40 bg-background/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                     {members.length} members
+                  </div>
+                  <div className="rounded-full border border-border/40 bg-background/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                     ID {org.id.slice(0, 12)}...
                   </div>
                </div>
             </div>
             
-            <div className="flex flex-col gap-3 shrink-0">
-               <Button onClick={() => setIsMembersDialogOpen(true)} variant="outline" className="h-12 rounded-xl px-6 border-border/60 font-bold hover:bg-muted/80">
-                  <Users className="size-4 mr-2" /> Manage Members
+            <div className="flex flex-wrap gap-3 xl:justify-end">
+               <Button onClick={() => setIsMembersDialogOpen(true)} variant="outline" className="h-11 rounded-xl px-5 border-border/50 bg-background/70 font-bold hover:bg-muted/70">
+                  <Users className="mr-2 size-4" /> Manage Members
                </Button>
-               <Button variant="outline" className="h-12 rounded-xl px-6 border-border/60 font-bold hover:bg-muted/80">
-                  <Settings className="size-4 mr-2" /> Node Settings
+               <Button variant="outline" className="h-11 rounded-xl px-5 border-border/50 bg-background/70 font-bold hover:bg-muted/70">
+                  <Settings className="mr-2 size-4" /> Node Settings
                </Button>
             </div>
          </div>
@@ -130,17 +136,20 @@ export default function OrgDetailPage() {
 
       {/* Projects Section */}
       <div className="space-y-8">
-        <div className="flex justify-between items-end">
-          <div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
             <h3 className="text-xl font-bold tracking-tight flex items-center gap-3">
               <FolderKanban className="size-5 text-primary" />
               Project Clusters
             </h3>
             <p className="text-sm text-muted-foreground mt-1">Initialize and manage project identities within this node.</p>
+            <div className="inline-flex rounded-full border border-border/30 bg-background/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              {projects.length} active clusters
+            </div>
           </div>
           {isAdmin && (
-            <Button onClick={() => setIsProjectDialogOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 transition-all hover-elevate">
-              <Plus className="mr-2 h-5 w-5" /> New Project
+            <Button onClick={() => setIsProjectDialogOpen(true)} className="h-11 rounded-xl px-5 font-bold shadow-lg shadow-primary/15 transition-all hover-elevate">
+              <Plus className="mr-2 h-4 w-4" /> New Project
             </Button>
           )}
         </div>
@@ -160,22 +169,22 @@ export default function OrgDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map(project => (
               <Link key={project.id} to={`/projects/${project.id}`}>
-                <Card className="p-8 rounded-[2rem] bg-card/40 backdrop-blur-3xl border-border/40 hover:border-primary/40 hover:shadow-2xl transition-all duration-300 group cursor-pointer h-full flex flex-col justify-between overflow-hidden relative">
-                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Card className="group relative flex h-full flex-col justify-between overflow-hidden rounded-[2rem] border-border/30 bg-card/35 p-6 backdrop-blur-3xl transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 md:p-7">
+                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                    <div className="relative z-10">
-                      <div className="flex justify-between items-start mb-6">
-                         <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
+                      <div className="mb-6 flex justify-between items-start">
+                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-500 group-hover:bg-primary group-hover:text-primary-foreground">
                             <FolderKanban className="size-6" />
                          </div>
-                         <div className="h-9 w-9 rounded-full bg-muted/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
+                         <div className="flex h-9 w-9 translate-x-2 items-center justify-center rounded-full bg-background/80 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
                             <ArrowRight className="h-4 w-4 text-primary" />
                          </div>
                       </div>
-                      <h4 className="text-2xl font-black tracking-tighter mb-1 line-clamp-1">{project.name}</h4>
-                      <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">{project.slug || project.id.slice(0,8)}</p>
+                      <h4 className="mb-1 line-clamp-1 text-2xl font-black tracking-tight">{project.name}</h4>
+                      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground/60">{project.slug || project.id.slice(0,8)}</p>
                       <div className="mt-6 flex flex-wrap gap-2">
                         {['dev', 'prod', 'staging'].map(env => (
-                          <div key={env} className="px-2 py-1 rounded-md bg-muted/40 text-[10px] uppercase font-bold tracking-tighter text-muted-foreground/80">
+                          <div key={env} className="rounded-full border border-border/20 bg-muted/25 px-3 py-1.5 text-[10px] uppercase font-bold tracking-[0.18em] text-muted-foreground/75">
                             {env}
                           </div>
                         ))}

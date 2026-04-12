@@ -158,6 +158,7 @@ program
       const injectedEnv = {
         ...process.env,
         ...secretsData.secrets,
+        SYNKRYPT_START_TIME: process.hrtime.bigint().toString(),
       };
 
       console.log(

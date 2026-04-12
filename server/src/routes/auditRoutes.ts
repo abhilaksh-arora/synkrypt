@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { listLogs } from '../controllers/auditController';
-import { requireAuth, requireAdmin } from '../middleware/authMiddleware';
+import { getProjectAuditLogs } from '../controllers/auditController';
+import { requireAuth } from '../middleware/authMiddleware';
 
 const router = Router();
 
-router.get('/', requireAuth, requireAdmin, listLogs);
+router.get('/:projectId/logs', requireAuth, getProjectAuditLogs);
 
 export default router;

@@ -109,7 +109,7 @@ export const createProject = async (req: any, res: Response) => {
       [project.id, req.user.id, ["dev", "staging", "prod"]],
     );
 
-    await logAudit(req.user.id, project.id, 'project_create', `Created project: ${project.name}`);
+    logAudit(req.user.id, project.id, "project_create", { name: project.name });
     res.status(201).json({ project });
   } catch (err) {
     console.error(err);
@@ -149,7 +149,7 @@ export const deleteProject = async (req: any, res: Response) => {
   const { id } = req.params;
   try {
     await pool.query("DELETE FROM projects WHERE id = $1", [id]);
-    await logAudit(req.user.id, id, 'project_delete', `Project deleted: ${id}`);
+    logAudit(req.user.id, id, "project_delete", { projectId: id });
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -171,7 +171,7 @@ export const updateProject = async (req: any, res: Response) => {
        RETURNING id, name, description, github_repo, project_key`,
       [name ?? null, description ?? null, github_repo ?? null, id],
     );
-    await logAudit(req.user.id, id, 'project_update', `Updated project: ${id}`);
+    logAudit(req.user.id, id, "project_update", { projectId: id });
     res.json({ project: result.rows[0] });
   } catch (err) {
     console.error(err);
@@ -203,7 +203,7 @@ export const addMember = async (req: any, res: Response) => {
        ON CONFLICT (project_id, user_id) DO UPDATE SET environments = EXCLUDED.environments`,
       [projectId, userId, environments],
     );
-    await logAudit(req.user.id, projectId, 'member_add', `Added user ${userId} to project ${projectId}`);
+    logAudit(req.user.id, projectId, "member_add", { targetUserId: userId });
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -219,7 +219,7 @@ export const removeMember = async (req: any, res: Response) => {
       "DELETE FROM project_members WHERE project_id = $1 AND user_id = $2",
       [projectId, userId],
     );
-    await logAudit(req.user.id, projectId, 'member_remove', `Removed user ${userId} from project ${projectId}`);
+    logAudit(req.user.id, projectId, "member_remove", { targetUserId: userId });
     res.json({ success: true });
   } catch (err) {
     console.error(err);

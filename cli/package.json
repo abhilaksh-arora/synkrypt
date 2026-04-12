@@ -1,0 +1,21 @@
+{
+  "name": "synkrypt",
+  "bin": {
+    "synkrypt": "./index.ts"
+  },
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "dev": "bun run index.ts"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
+  }
+}

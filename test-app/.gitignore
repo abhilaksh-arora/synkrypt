@@ -1,5 +1,0 @@
-# Ignore local Synkrypt configuration
-.synkrypt/
-
-# Ignore environment variables
-.env

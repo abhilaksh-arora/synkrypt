@@ -1,0 +1,19 @@
+{
+  "name": "synkrypt-monorepo",
+  "private": true,
+  "workspaces": [
+    "cli",
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "install-all": "bun install",
+    "cli": "bun run --filter \"@synkrypt/cli\" dev"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "turbo": "^2.9.6"
+  }
+}

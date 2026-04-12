@@ -1,6 +1,6 @@
 # 🛡️ Synkrypt: The Localized Secrets Nexus
 
-[![Platform: Self-Hostable](https://img.shields.io/badge/Platform-Self--Hostable-blueviolet?style=flat-square)](https://github.com/synkrypt/synkrypt)
+[![Platform: Self-Hostable](https://img.shields.io/badge/Platform-Self--Hostable-blueviolet?style=flat-square)](https://github.com/abhilaksh/synkrypt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 [![Typography: Professional](https://img.shields.io/badge/Typography-Bold--Professional-orange?style=flat-square)](https://synkrypt.com)
 
@@ -11,6 +11,7 @@
 ## 💎 Core Philosophy
 
 Standard secrets management often involves vendor lock-in and complex permissions. Synkrypt simplifies the protocol:
+
 - **Localized First**: Your secrets live on your node, following your security rules.
 - **Zero-Knowledge Architecture**: Every project generates a unique cryptographic Master Key. The server never stores your raw secrets in plaintext.
 - **CLI-Native Workflow**: Inject secrets directly into child processes at runtime. No more unencrypted `.env` files lingering on developer machines.
@@ -18,19 +19,25 @@ Standard secrets management often involves vendor lock-in and complex permission
 ## 🚀 Key Features
 
 ### 🔐 Vortex Infrastructure
+
 Project-centric encryption isolation. A breach in one project container does not compromise the cryptographic integrity of others.
 
 ### 🌓 Premium Dashboard
-A professional, localized dashboard featuring a high-fidelity cream/white theme, refined typography, and a glassmorphism design system. 
+
+A professional, localized dashboard featuring a high-fidelity cream/white theme, refined typography, and a glassmorphism design system.
+
 - **Universal Breadcrumbs**: High-precision navigation across organizations, projects, and documentation.
 - **Real-time Audit Nexus**: Monitor cryptographic handshakes and secret accesses in real-time.
 
 ### 🐚 CLI Nexus
+
 The primary interface for developers. Seamlessly transition from development to production clusters.
+
 - `synkrypt login`: Secure administrative handshake.
 - `synkrypt run`: Execute any command with perfectly injected environment variables.
 
 ### 🛡️ Fine-Grained RBAC
+
 Switch between **Admin** and **Developer** roles with localized permissions for `dev`, `staging`, and `prod` environments.
 
 ---
@@ -38,26 +45,32 @@ Switch between **Admin** and **Developer** roles with localized permissions for 
 ## 🛠️ Getting Started
 
 ### 1. Requirements
+
 - [Bun](https://bun.sh) (v1.0.0+)
-- PostgreSQL (Neon Recommended)
+- PostgreSQL
 
 ### 2. Infrastructure Setup
+
 Clone the nexus and initialize the database.
 
 ```bash
-git clone https://github.com/abhilaksh/synkrypt-poc.git
-cd synkrypt-poc
+git clone https://github.com/abhilaksh/synkrypt.git
+cd synkrypt
 ```
 
 #### Server Configuration
+
 Configure the core node variables in `server/.env`:
+
 ```bash
+PORT=2809
 DATABASE_URL=postgresql://user:pass@localhost:5432/synkrypt
 SERVER_SECRET=<64_char_hex_string>
 JWT_SECRET=<64_char_hex_string>
 ```
 
 #### Start the Node
+
 ```bash
 cd server
 bun install
@@ -65,12 +78,16 @@ bun run index.ts
 ```
 
 ### 3. Dashboard Deployment
+
 ```bash
 cd ../web
 bun install
+# Optional: SYNKRYPT_SERVER_URL=http://localhost:2809
 bun run dev --port 5173
 ```
+
 Accessible at `http://localhost:5173`.
+Dashboard talks to the server at `http://localhost:2809` by default.
 
 ---
 
@@ -79,12 +96,14 @@ Accessible at `http://localhost:5173`.
 Authenticate your local terminal with the active node.
 
 ### Initial Configuration
+
 ```bash
 cd ../cli
 synkrypt login
 ```
 
 ### Injecting Secrets
+
 Execute your application across different environmental clusters:
 
 ```bash
@@ -112,6 +131,7 @@ Detailed guides on technical nexus protocols, node deployment, and the encryptio
 ---
 
 ## ⚖️ License
+
 Distributed under the MIT License. See `LICENSE` for more information.
 
 <p align="center">

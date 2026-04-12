@@ -23,9 +23,14 @@ yarn-debug.log*
 yarn-error.log*
 bun-debug.log*
 
-# IDEs
+# IDEs & Tools
 .vscode/
 .idea/
+.antigravity/
+
+# CLI
+cli/bin/
+cli/.env
 
 # Testing
 coverage/

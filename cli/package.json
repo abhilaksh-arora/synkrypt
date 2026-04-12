@@ -1,5 +1,5 @@
 {
-  "name": "synkrypt",
+  "name": "@synkrypt/cli",
   "bin": {
     "synkrypt": "./index.ts"
   },

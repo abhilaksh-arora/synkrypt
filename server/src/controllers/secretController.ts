@@ -305,3 +305,26 @@ export const syncSecrets = async (req: any, res: Response) => {
     client.release();
   }
 };
+
+// PATCH /projects/:projectId/secrets/:secretId/visibility
+export const updateSecretVisibility = async (req: any, res: Response) => {
+  const { projectId, secretId } = req.params;
+  const { can_view } = req.body;
+
+  if (can_view === undefined) {
+    return res.status(400).json({ error: 'can_view is required.' });
+  }
+
+  try {
+    await pool.query(
+      'UPDATE secrets SET can_view = $1, updated_at = now() WHERE id = $2 AND project_id = $3',
+      [can_view, secretId, projectId]
+    );
+
+    await logAudit(req.user.id, projectId, 'secret_visibility_change', `id=${secretId} can_view=${can_view}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+};

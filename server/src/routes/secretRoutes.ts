@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { listSecrets, upsertSecret, deleteSecret, pullSecrets, runSecrets, bulkUpsertSecrets, syncSecrets } from '../controllers/secretController';
+import { listSecrets, upsertSecret, deleteSecret, pullSecrets, runSecrets, bulkUpsertSecrets, syncSecrets, updateSecretVisibility } from '../controllers/secretController';
 import { requireAuth } from '../middleware/authMiddleware';
 
 const router = Router({ mergeParams: true });
@@ -10,6 +10,7 @@ router.get('/', requireAuth, listSecrets);
 router.post('/', requireAuth, upsertSecret);
 router.post('/bulk', requireAuth, bulkUpsertSecrets);
 router.post('/sync', requireAuth, syncSecrets);
+router.patch('/:secretId/visibility', requireAuth, updateSecretVisibility);
 router.delete('/:secretId', requireAuth, deleteSecret);
 
 export default router;

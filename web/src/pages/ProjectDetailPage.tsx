@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { 
-  KeyRound, Plus, Eye, EyeOff, Copy, Trash2, 
-  Loader2, ShieldCheck, Terminal, Filter, Search, FileUp, Lock, Users,
-  Pencil, ArrowLeftRight, Settings2, MoreVertical
+  KeyRound, Plus as PlusIcon, Eye as EyeIcon, EyeOff as EyeOffIcon, Copy as CopyIcon, Trash2 as TrashIcon, 
+  Loader2, ShieldCheck, Terminal, Filter as FilterIcon, Search as SearchIcon, FileUp, Lock as LockIcon, Users,
+  Pencil, ArrowLeftRight, Settings2, AlertCircle
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
-  const {} = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   
   const [project, setProject] = useState<any>(null);
@@ -48,6 +48,11 @@ export default function ProjectDetailPage() {
   
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingSecret, setEditingSecret] = useState<any>(null);
+
+  const [isClearanceOpen, setIsClearanceOpen] = useState(false);
+  const [clearanceMember, setClearanceMember] = useState<any>(null);
+  const [clearanceEnvs, setClearanceEnvs] = useState<string[]>([]);
+  const [updatingClearance, setUpdatingClearance] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -122,12 +127,7 @@ export default function ProjectDetailPage() {
 
   const handleUpdateVisibility = async (secret: any, canView: boolean) => {
     try {
-      await api.upsertSecret(id!, { 
-        key: secret.key, 
-        value: secret.value, 
-        can_view: canView, 
-        environment: env 
-      });
+      await api.updateSecretVisibility(id!, secret.id, canView);
       await loadData();
       toast({ title: "Visibility Protocol Updated" });
     } catch (err: any) {
@@ -167,6 +167,24 @@ export default function ProjectDetailPage() {
       toast({ title: "Sync Failed", description: err.message, variant: "destructive" });
     } finally {
       setSyncLoading(false);
+    }
+  };
+
+  const handleUpdateClearance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdatingClearance(true);
+    try {
+      await api.addProjectMember(id!, { 
+        userId: clearanceMember.id, 
+        environments: clearanceEnvs 
+      });
+      await loadData();
+      setIsClearanceOpen(false);
+      toast({ title: "Security Clearance Updated", description: `${clearanceMember.name}'s access protocols have been re-calibrated.` });
+    } catch (err: any) {
+      toast({ title: "Clearance Update Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUpdatingClearance(false);
     }
   };
 
@@ -243,7 +261,7 @@ export default function ProjectDetailPage() {
                   onClick={() => copyToClipboard(project?.project_key)}
                   className="ml-1 hover:text-foreground transition-colors p-0.5"
                 >
-                  <Copy className="size-2.5" />
+                  <CopyIcon className="size-2.5" />
                 </button>
               </div>
             </div>
@@ -257,11 +275,11 @@ export default function ProjectDetailPage() {
                <TabsTrigger value="prod" className="rounded-lg px-5 data-[state=active]:bg-background data-[state=active]:shadow-lg font-bold text-xs uppercase tracking-widest">Production</TabsTrigger>
              </TabsList>
            </Tabs>
-           {activeTab === 'secrets' && (
-             <>
-               <Button onClick={() => setIsAddOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
-                  <Plus className="mr-2 size-5" /> Add Secret
-               </Button>
+           {user?.role === 'admin' && (
+              <>
+                <Button onClick={() => setIsAddOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
+                   <PlusIcon className="mr-2 size-5" /> Add Secret
+                </Button>
                 <Button onClick={() => setIsBulkOpen(true)} variant="outline" className="rounded-xl px-6 h-12 font-bold border-border/40 hover:bg-muted/80">
                    <FileUp className="mr-2 size-5" /> Bulk Import
                 </Button>
@@ -298,9 +316,9 @@ export default function ProjectDetailPage() {
                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Environment</p>
                <h4 className="text-2xl font-bold mt-1 uppercase text-primary">{env}</h4>
             </div>
-            <div className="h-12 w-12 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
-               <Filter className="size-6" />
-            </div>
+             <div className="h-12 w-12 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
+                <FilterIcon className="size-6" />
+             </div>
          </Card>
          <Card className="p-6 rounded-[2rem] bg-card/30 backdrop-blur-xl border-border/40 flex items-center justify-between group cursor-help">
             <div className="flex-1">
@@ -317,7 +335,7 @@ export default function ProjectDetailPage() {
       <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-border/40 shadow-2xl overflow-hidden relative">
         <div className="p-8 border-b border-border/20 flex flex-col md:flex-row justify-between items-center gap-4">
            <div className="relative w-full md:max-w-md group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
               <Input 
                  placeholder="Search cryptographic keys..." 
                  className="pl-11 h-12 rounded-2xl bg-muted/20 border-border/40 focus:bg-background transition-all"
@@ -372,7 +390,7 @@ export default function ProjectDetailPage() {
                             className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-amber-500/20 transition-colors"
                             title="Click to mark as Public"
                           >
-                            <Lock size={10} /> Restricted
+                            <LockIcon size={10} /> Restricted
                           </button>
                         )}
                         {secret.can_view && (
@@ -381,7 +399,7 @@ export default function ProjectDetailPage() {
                              className="bg-primary/10 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-primary/20 transition-colors opacity-0 group-hover:opacity-100"
                              title="Click to mark as Restricted"
                            >
-                             <Eye size={10} /> Public
+                             <EyeIcon size={10} /> Public
                            </button>
                         )}
                       </div>
@@ -394,10 +412,10 @@ export default function ProjectDetailPage() {
                         {secret.can_view && (
                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100">
                               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={() => toggleReveal(secret.id)}>
-                                 {revealed[secret.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                                 {revealed[secret.id] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={() => copyToClipboard(secret.value)}>
-                                 <Copy size={16} />
+                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={(e) => { e.stopPropagation(); copyToClipboard(secret.value); }}>
+                                 <CopyIcon size={16} />
                               </Button>
                            </div>
                         )}
@@ -413,9 +431,9 @@ export default function ProjectDetailPage() {
                         >
                            <Pencil size={18} />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100" onClick={() => handleDelete(secret.id)}>
-                           <Trash2 size={18} />
-                        </Button>
+                         <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100" onClick={() => handleDelete(secret.id)}>
+                            <TrashIcon size={18} />
+                         </Button>
                      </div>
                   </TableCell>
                 </TableRow>
@@ -436,7 +454,7 @@ export default function ProjectDetailPage() {
           <div className="p-10 pb-6">
             <DialogHeader className="mb-8">
               <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <Plus size={32} />
+                <PlusIcon size={32} />
               </div>
               <DialogTitle className="text-3xl font-bold tracking-tight">New Secret Injection</DialogTitle>
               <DialogDescription className="text-base">
@@ -546,9 +564,9 @@ export default function ProjectDetailPage() {
                    </h3>
                    <p className="text-muted-foreground mt-2">Managing environment-level security clearance for this project.</p>
                 </div>
-                <Button onClick={() => setIsAddMemberOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
-                   <Plus className="mr-2 size-5" /> Add Project Member
-                </Button>
+                 <Button onClick={() => setIsAddMemberOpen(true)} className="rounded-xl px-6 h-12 font-bold shadow-xl shadow-primary/20 hover-elevate">
+                    <PlusIcon className="mr-2 size-5" /> Add Project Member
+                 </Button>
               </div>
 
               <div className="rounded-3xl border border-border/20 overflow-hidden bg-muted/5">
@@ -584,9 +602,24 @@ export default function ProjectDetailPage() {
                            </div>
                         </TableCell>
                         <TableCell className="text-right pr-8">
-                           <Button variant="ghost" size="icon" className="rounded-xl hover:bg-destructive/10 hover:text-destructive" onClick={() => handleRemoveProjectMember(m.id)}>
-                              <Trash2 size={16} />
-                           </Button>
+                           <div className="flex justify-end gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="rounded-xl hover:bg-primary/10 hover:text-primary transition-colors" 
+                                title="Edit Security Clearance"
+                                onClick={() => {
+                                  setClearanceMember(m);
+                                  setClearanceEnvs(m.environments || []);
+                                  setIsClearanceOpen(true);
+                                }}
+                              >
+                                 <Settings2 size={16} />
+                              </Button>
+                               <Button variant="ghost" size="icon" className="rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors" title="Revoke All Access" onClick={() => handleRemoveProjectMember(m.id)}>
+                                 <TrashIcon size={16} />
+                               </Button>
+                           </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -623,7 +656,7 @@ export default function ProjectDetailPage() {
                               <div className="text-[10px] text-muted-foreground">{u.email}</div>
                             </div>
                           </div>
-                          <Plus className="size-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                           <PlusIcon className="size-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
                         </button>
                       ))}
                       {orgMembers.filter(u => !projectMembers.find(m => m.id === u.id)).length === 0 && (
@@ -717,7 +750,7 @@ export default function ProjectDetailPage() {
                   placeholder="Enter new value..."
                   className="h-14 rounded-2xl bg-muted/30 border-border/40 px-5 focus:bg-background transition-all font-mono"
                   value={editingSecret?.value || ''}
-                  onChange={e => setEditingSecret(p => ({ ...p, value: e.target.value }))}
+                  onChange={e => setEditingSecret((p: any) => ({ ...p, value: e.target.value }))}
                   required
                 />
               </div>
@@ -729,7 +762,7 @@ export default function ProjectDetailPage() {
                   </div>
                   <Switch 
                     checked={editingSecret?.can_view}
-                    onCheckedChange={(val) => setEditingSecret(p => ({ ...p, can_view: val }))}
+                    onCheckedChange={(val) => setEditingSecret((p: any) => ({ ...p, can_view: val }))}
                   />
                </div>
             </form>
@@ -738,6 +771,66 @@ export default function ProjectDetailPage() {
           <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
             <Button form="edit-form" type="submit" disabled={saving} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
               {saving ? <Loader2 className="animate-spin" /> : "Commit Modification"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isClearanceOpen} onOpenChange={setIsClearanceOpen}>
+        <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
+          <div className="p-10 pb-6">
+            <DialogHeader className="mb-8">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+                <ShieldCheck size={32} />
+              </div>
+              <DialogTitle className="text-3xl font-black tracking-tight">Security Clearance</DialogTitle>
+              <DialogDescription className="text-base text-muted-foreground">
+                Revoke or grant cluster access for <span className="text-primary font-bold">{clearanceMember?.name}</span>.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form id="clearance-form" onSubmit={handleUpdateClearance} className="space-y-6">
+              <div className="space-y-4">
+                 {['dev', 'staging', 'prod'].map(cluster => (
+                  <div 
+                    key={cluster} 
+                    className={`flex items-center justify-between p-5 rounded-2xl border transition-all cursor-pointer ${
+                      clearanceEnvs.includes(cluster) ? 'bg-primary/5 border-primary/30 shadow-sm' : 'bg-muted/10 border-border/20 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                       <div className={`h-8 w-8 rounded-lg flex items-center justify-center font-black text-[10px] uppercase ${
+                         clearanceEnvs.includes(cluster) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                       }`}>
+                          {cluster.charAt(0)}
+                       </div>
+                       <div>
+                          <div className="font-bold text-sm uppercase tracking-wider">{cluster} Cluster</div>
+                          <div className="text-[10px] text-muted-foreground italic">Full cryptographic injection access</div>
+                       </div>
+                    </div>
+                    <Switch 
+                      checked={clearanceEnvs.includes(cluster)} 
+                      onCheckedChange={(val) => {
+                        if (val) setClearanceEnvs((p: string[]) => Array.from(new Set([...p, cluster])));
+                        else setClearanceEnvs((p: string[]) => p.filter(e => e !== cluster));
+                      }} 
+                    />
+                  </div>
+                ))}
+              </div>
+
+               <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-amber-500">
+                   <AlertCircle className="size-5 shrink-0" />
+                   <p className="text-[10px] font-bold leading-relaxed lowercase italic">
+                     Caution: Revoking access will immediately disconnect this user from the specified cluster secrets via both CLI and Dashboard.
+                   </p>
+               </div>
+            </form>
+          </div>
+          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
+            <Button form="clearance-form" type="submit" disabled={updatingClearance} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
+              {updatingClearance ? <Loader2 className="animate-spin" /> : "Authorize Clearance"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -100,4 +100,7 @@ export const api = {
   // Sync
   syncSecrets: (pid: string, body: { fromEnv: string; toEnv: string }) =>
     request("POST", `/projects/${pid}/secrets/sync`, body),
+
+  updateSecretVisibility: (pid: string, sid: string, can_view: boolean) =>
+    request("PATCH", `/projects/${pid}/secrets/${sid}/visibility`, { can_view }),
 };

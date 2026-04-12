@@ -27,7 +27,8 @@ Project-centric encryption isolation. A breach in one project container does not
 A professional, localized dashboard featuring a high-fidelity cream/white theme, refined typography, and a glassmorphism design system.
 
 - **Universal Breadcrumbs**: High-precision navigation across organizations, projects, and documentation.
-- **Real-time Audit Nexus**: Monitor cryptographic handshakes and secret accesses in real-time.
+- **Forensic Audit Trail**: A persistent, vertical timeline of every cryptographic handshake and secret access.
+- **Security Webhooks**: Real-time Slack/Discord alerts for **Restricted Secret** access.
 
 ### 🐚 CLI Nexus
 
@@ -36,9 +37,11 @@ The primary interface for developers. Seamlessly transition from development to 
 - `synkrypt login`: Secure administrative handshake.
 - `synkrypt run`: Execute any command with perfectly injected environment variables.
 
-### 🛡️ Fine-Grained RBAC
-
 Switch between **Admin** and **Developer** roles with localized permissions for `dev`, `staging`, and `prod` environments.
+
+### ⚡ Synkrypt High-Resolution Profiler
+
+Validated sub-millisecond injection overhead. The `test-app` includes a built-in profiler to measure the exact delta between CLI injection and process boot.
 
 ---
 
@@ -96,7 +99,9 @@ Dashboard talks to the server at `http://localhost:2809` by default.
 Authenticate your local terminal with the active node.
 
 ### 3. CLI Integration
+
 Navigate to the `cli` directory and link it globally:
+
 ```bash
 cd cli
 bun link
@@ -105,26 +110,33 @@ bun link
 Now you can use the `synkrypt` command from anywhere!
 
 #### Login
+
 ```bash
 synkrypt login
 ```
 
 #### Link a Project
+
 Navigate to your application folder and run:
+
 ```bash
 synkrypt use <project-key>
 ```
 
 #### Pull Secrets
+
 ```bash
 synkrypt pull -e dev
 ```
 
 #### Run with Secrets
+
 ```bash
 synkrypt run -e dev -- bun run start
 ```
+
 # Deploy to production cluster
+
 synkrypt run --env prod -- bun run build
 
 ---

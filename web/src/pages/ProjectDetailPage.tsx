@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const {} = useAuth();
   const { toast } = useToast();
   
   const [project, setProject] = useState<any>(null);
@@ -40,9 +40,9 @@ export default function ProjectDetailPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const pData = await api.getProject(id!);
+      const pData = await api.getProject(id!) as any;
       setProject(pData.project);
-      const sData = await api.listSecrets(id!, env);
+      const sData = await api.listSecrets(id!, env) as any;
       setSecrets(sData.secrets);
     } catch (err) {
       console.error(err);

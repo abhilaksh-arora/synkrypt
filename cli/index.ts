@@ -28,7 +28,7 @@ program
 
     try {
       // Login ignores normal session fetching, so we intercept the Set-Cookie token
-      const res = await fetch(`${process.env.SYNKRYPT_SERVER_URL || "http://localhost:3000"}/auth/login`, {
+      const res = await fetch(`${process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809"}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -37,7 +37,7 @@ program
       
       const cookie = res.headers.get('set-cookie');
       const match = cookie?.match(/synkrypt_session=([^;]+)/);
-      if (!match) throw new Error("No session token returned.");
+      if (!match || !match[1]) throw new Error("No session token returned.");
 
       saveSession(match[1]);
       console.log(`✅ Logged in successfully.`);
@@ -51,7 +51,7 @@ program
   .description("Link current directory to a project")
   .action(async (projectKey) => {
     try {
-      const data = await api.getProjectByKey(projectKey);
+      const data = (await api.getProjectByKey(projectKey)) as any;
       ensureDirs();
       setProjectConfig({ projectKey });
       console.log(`✅ Using project: ${data.project.name}`);
@@ -69,8 +69,8 @@ program
     const config = requireProjectConfig();
 
     try {
-      const data = await api.getProjectByKey(config.projectKey);
-      const secretsData = await api.pullSecrets(data.project.id, options.env);
+      const data = (await api.getProjectByKey(config.projectKey)) as any;
+      const secretsData = (await api.pullSecrets(data.project.id, options.env)) as any;
       
       let lines: string[] = [];
       for (const [key, val] of Object.entries(secretsData.secrets)) {
@@ -95,8 +95,8 @@ program
     const config = requireProjectConfig();
 
     try {
-      const data = await api.getProjectByKey(config.projectKey);
-      const secretsData = await api.runSecrets(data.project.id, options.env);
+      const data = (await api.getProjectByKey(config.projectKey)) as any;
+      const secretsData = (await api.runSecrets(data.project.id, options.env)) as any;
 
       const injectedEnv = {
         ...process.env,

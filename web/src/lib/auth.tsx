@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { customFetch, setAuthTokenGetter } from "@synkrypt/api-client-react";
+import { customFetch, setAuthTokenGetter } from "../api/client";
 
 export interface User {
   id: string;

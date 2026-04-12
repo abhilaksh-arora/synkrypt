@@ -1,5 +1,5 @@
 // Central wrapper for all server logic
-const BASE_URL = process.env.SYNKRYPT_SERVER_URL || "http://localhost:3000";
+const BASE_URL = process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
 
 import { getSession } from "./config";
 
@@ -27,7 +27,7 @@ export async function request(method: string, path: string, body?: any) {
   if (!res.ok) {
     let err = `HTTP ${res.status}`;
     try {
-      const data = await res.json();
+      const data = (await res.json()) as any;
       if (data.error) err = data.error;
     } catch {}
     throw new Error(err);

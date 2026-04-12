@@ -1,16 +1,49 @@
 const BASE = process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
 
-async function request(method: string, path: string, body?: any): Promise<any> {
-  const res = await fetch(`${BASE}${path}`, {
-    method,
+let authTokenGetter: (() => string | null) | null = null;
+
+export const setAuthTokenGetter = (getter: (() => string | null) | null) => {
+  authTokenGetter = getter;
+};
+
+export async function customFetch<T = any>(
+  path: string,
+  options: RequestInit & { responseType?: "json" } = {},
+): Promise<T> {
+  const { responseType, ...fetchOptions } = options;
+  const token = authTokenGetter ? authTokenGetter() : null;
+
+  const headers = new Headers(fetchOptions.headers || {});
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  // Adjust path to remove /api prefix if it exists, to match current server routes
+  const normalizedPath = path.startsWith("/api") ? path.slice(4) : path;
+
+  const res = await fetch(`${BASE}${normalizedPath}`, {
+    ...fetchOptions,
+    headers,
     credentials: "include",
-    headers: body ? { "Content-Type": "application/json" } : {},
-    body: body ? JSON.stringify(body) : undefined,
   });
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  return data;
+  if (responseType === "json") {
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data as T;
+  }
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json().catch(() => ({}))) as T;
+}
+
+async function request(method: string, path: string, body?: any): Promise<any> {
+  return customFetch(path, {
+    method,
+    body: body ? JSON.stringify(body) : undefined,
+    responseType: "json",
+    headers: body ? { "Content-Type": "application/json" } : {},
+  });
 }
 
 export const api = {

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { 
   Users, UserPlus, Trash2, Shield, Mail, 
-  Crown, Code, Loader2, Search, ArrowRight,
-  ShieldCheck
+  Crown, Code, Loader2, Search, ArrowRight
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

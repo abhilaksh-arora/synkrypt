@@ -1,0 +1,28 @@
+{
+    # Global options
+    email {EMAIL}
+}
+
+# Replace this with your domain
+{DOMAIN} {
+    # Serve the static frontend
+    root * {PROJECT_ROOT}/web/dist
+    file_server
+
+    # Reverse proxy API requests to the Bun server
+    handle_path /api/* {
+        reverse_proxy localhost:2809
+    }
+
+    # Handle React routing (SPA)
+    # If the file doesn't exist, serve index.html
+    try_files {path} /index.html
+
+    # Compression for faster loading
+    encode gzip zstd
+
+    # Logging
+    log {
+        output file /var/log/caddy/synkrypt.log
+    }
+}

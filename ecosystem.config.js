@@ -3,11 +3,11 @@ module.exports = {
     {
       name: "synkrypt-server",
       cwd: "./server",
-      script: "src/index.ts",
+      script: "index.ts",
       interpreter: "bun",
       env: {
         NODE_ENV: "production",
-        PORT: 2809
+        PORT: 2809,
       },
       // Better for production logging
       out_file: "./logs/out.log",
@@ -15,7 +15,7 @@ module.exports = {
       merge_logs: true,
       // Auto-restart if the app crashes
       autorestart: true,
-      max_memory_restart: "1G"
-    }
-  ]
+      max_memory_restart: "1G",
+    },
+  ],
 };

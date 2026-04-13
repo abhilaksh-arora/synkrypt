@@ -115,7 +115,7 @@ synkrypt use <project-key>
 ```
 
 > [!TIP]
-> **Team Collaboration**: Synkrypt now supports checking the `.synkrypt/config.json` file into version control. This allows your team to sync project links automatically—anyone who clones the repo can immediately run `synkrypt run` without manual setup.
+> **Team Collaboration**: Synkrypt supports checking the `.synkrypt/config.json` file into version control. This allows your team to sync project links automatically—anyone who clones the repo can immediately run `synkrypt run` without manual setup.
 
 ### Run with Secrets
 
@@ -124,6 +124,15 @@ synkrypt run --env dev -- bun run dev
 ```
 
 ---
+
+## 🚢 Production Deployment
+
+Synkrypt is designed for high-availability production environments. We provide pre-configured templates for **PM2** and **Caddy**.
+
+1. **Backend**: Use `ecosystem.config.js` to manage the process via PM2.
+2. **Reverse Proxy**: Use the provided `Caddyfile` for automated SSL and API routing.
+
+For a detailed step-by-step guide, see our [Production Deployment Guide](docs/deployment.md).
 
 ## 🛡️ Security Layers
 

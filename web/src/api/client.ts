@@ -1,4 +1,6 @@
-const BASE = (import.meta as any).env.VITE_SYNKRYPT_SERVER_URL || "http://localhost:2809";
+const BASE = import.meta.env.PROD 
+  ? "/api" 
+  : (import.meta as any).env.VITE_SYNKRYPT_SERVER_URL || "http://localhost:2809";
 
 let authTokenGetter: (() => string | null) | null = null;
 

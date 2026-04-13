@@ -10,13 +10,13 @@ import './index.css';
 import LoginPage from './pages/LoginPage';
 import AppLayout from './pages/AppLayout';
 import DashboardPage from './pages/DashboardPage';
-import OrgsPage from './pages/OrgsPage';
-import OrgDetailPage from './pages/OrgDetailPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import UsersPage from './pages/UsersPage';
+import PresetsPage from './pages/PresetsPage';
 import SettingsPage from './pages/SettingsPage';
 import DocsPage from './pages/DocsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
+import VaultPage from './pages/VaultPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -56,14 +56,14 @@ createRoot(document.getElementById('root')!).render(
               
               <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/orgs" element={<OrgsPage />} />
-                <Route path="/orgs/:id" element={<OrgDetailPage />} />
+                <Route path="/vault" element={<VaultPage />} />
                 <Route path="/projects/:id" element={<ProjectDetailPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/docs" element={<DocsPage />} />
                 
                 {/* Admin Only */}
                 <Route path="/users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+                <Route path="/presets" element={<AdminRoute><PresetsPage /></AdminRoute>} />
                 <Route path="/audit-logs" element={<AdminRoute><AuditLogsPage /></AdminRoute>} />
               </Route>
             </Routes>

@@ -9,9 +9,9 @@ const migrate = async () => {
   try {
     console.log('🚀 Running migrations...');
     await pool.query(schema);
-    console.log('✅ Migrations completed successfully');
+    console.log(' Migrations completed successfully');
   } catch (err) {
-    console.error('❌ Migration failed:', err);
+    console.error(' Migration failed:', err);
     process.exit(1);
   } finally {
     await pool.end();

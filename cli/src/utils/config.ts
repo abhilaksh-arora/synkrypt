@@ -19,7 +19,7 @@ export function saveSession(token: string) {
 
 export function getSession(): string {
   if (!fs.existsSync(SESSION_FILE)) {
-    console.error("❌ Not logged in. Run 'synkrypt login' first.");
+    console.error(" Not logged in. Run 'synkrypt login' first.");
     process.exit(1);
   }
   return JSON.parse(fs.readFileSync(SESSION_FILE, "utf8")).token;
@@ -42,7 +42,7 @@ export function deleteSession() {
 export function requireProjectConfig() {
   const config = getProjectConfig();
   if (!config?.projectKey) {
-    console.error("❌ Project not configured. Run 'synkrypt use <projectKey>' first.");
+    console.error(" Project not configured. Run 'synkrypt use <projectKey>' first.");
     process.exit(1);
   }
   return config;

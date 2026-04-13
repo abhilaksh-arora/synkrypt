@@ -32,7 +32,7 @@ program
     }
 
     if (!email || !password) {
-      console.error("❌ Email and password are required.");
+      console.error(" Email and password are required.");
       process.exit(1);
     }
 
@@ -54,9 +54,9 @@ program
       if (!match || !match[1]) throw new Error("No session token returned.");
 
       saveSession(match[1]);
-      console.log(`✅ Logged in successfully.`);
+      console.log(` Logged in successfully.`);
     } catch (err: any) {
-      console.error(`❌ Login failed: ${err.message}`);
+      console.error(` Login failed: ${err.message}`);
     }
   });
 
@@ -78,10 +78,10 @@ program
         }
       }
 
-      console.log(`✅ Project linked: ${data.project.name}`);
+      console.log(` Project linked: ${data.project.name}`);
       console.log(`📂 Configuration saved to ./.synkrypt/config.json`);
     } catch (err: any) {
-      console.error(`❌ Failed to link project: ${err.message}`);
+      console.error(` Failed to link project: ${err.message}`);
     }
   });
 
@@ -106,12 +106,12 @@ program
       }
 
       fs.writeFileSync(".env", lines.join("\n") + "\n");
-      console.log(`✅ Wrote ${lines.length} viewable secrets to .env`);
+      console.log(` Wrote ${lines.length} viewable secrets to .env`);
       console.log(
         `⚠️  Note: Restricted secrets (can_view=false) are omitted. Use 'run' to inject them.`,
       );
     } catch (err: any) {
-      console.error(`❌ Failed to pull secrets: ${err.message}`);
+      console.error(` Failed to pull secrets: ${err.message}`);
     }
   });
 
@@ -120,7 +120,7 @@ program
   .description("Clear the local session and logout from the server")
   .action(async () => {
     deleteSession();
-    console.log("✅ Logged out successfully. Local session cleared.");
+    console.log(" Logged out successfully. Local session cleared.");
   });
 
 program
@@ -133,7 +133,7 @@ program
       console.log(`🔑 Role: ${data.user.role}`);
       console.log("───────────────────────────────────\n");
     } catch (err: any) {
-      console.error(`❌ Identification failed: ${err.message}`);
+      console.error(` Identification failed: ${err.message}`);
     }
   });
 
@@ -197,7 +197,7 @@ program
         process.exit(code ?? 0);
       });
     } catch (err: any) {
-      console.error(`❌ Failed to run command: ${err.message}`);
+      console.error(` Failed to run command: ${err.message}`);
     }
   });
 

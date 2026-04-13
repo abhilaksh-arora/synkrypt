@@ -1,25 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { 
   KeyRound, Plus as PlusIcon, Eye as EyeIcon, EyeOff as EyeOffIcon, Copy as CopyIcon, Trash2 as TrashIcon, 
-  Loader2, ShieldCheck, Terminal, Filter as FilterIcon, Search as SearchIcon, FileUp, Lock as LockIcon, Users,
-  Pencil, ArrowLeftRight, Settings2, AlertCircle
+  Loader2, ShieldCheck, Terminal, Search as SearchIcon, Users,
+  Settings2, FileText, ShieldQuestion, User as UserIcon,
+  Globe, Download, Clock, Activity, History, ArrowRightLeft, ArrowRight, UserPlus, Calendar,
+  FileUp, ShieldAlert, XCircle
 } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -32,32 +37,39 @@ export default function ProjectDetailPage() {
   const [search, setSearch] = useState('');
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
-  const [isWebhookOpen, setIsWebhookOpen] = useState(false);
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [savingWebhook, setSavingWebhook] = useState(false);
   
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [orgMembers, setOrgMembers] = useState<any[]>([]);
+  const [accessPresets, setAccessPresets] = useState<any[]>([]);
+  
+  const [newSecret, setNewSecret] = useState({ key: '', value: '', environment: 'dev', can_view: true, isPersonal: false, type: 'env' });
+  const [saving, setSaving] = useState(false);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  
+  const [isClearanceOpen, setIsClearanceOpen] = useState(false);
+  const [clearanceMember, setClearanceMember] = useState<any>(null);
+  const [clearanceEnvs, setClearanceEnvs] = useState<string[]>([]);
+  const [clearancePreset, setClearancePreset] = useState('');
+  const [clearanceTTL, setClearanceTTL] = useState('');
+  const [updatingClearance, setUpdatingClearance] = useState(false);
+
+  // Advanced feature states
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkCanView, setBulkCanView] = useState(true);
-  const [newSecret, setNewSecret] = useState({ key: '', value: '', environment: 'dev', can_view: true });
-  const [saving, setSaving] = useState(false);
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   
   const [isSyncOpen, setIsSyncOpen] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncForm, setSyncForm] = useState({ from: 'dev', to: 'staging' });
-  
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editingSecret, setEditingSecret] = useState<any>(null);
 
-  const [isClearanceOpen, setIsClearanceOpen] = useState(false);
-  const [clearanceMember, setClearanceMember] = useState<any>(null);
-  const [clearanceEnvs, setClearanceEnvs] = useState<string[]>([]);
-  const [updatingClearance, setUpdatingClearance] = useState(false);
+  const [isWebhookOpen, setIsWebhookOpen] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [savingWebhook, setSavingWebhook] = useState(false);
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({ name: '', description: '', github_repo: '' });
 
   useEffect(() => {
     if (id) {
@@ -70,13 +82,17 @@ export default function ProjectDetailPage() {
     try {
       const pData = await api.getProject(id!) as any;
       setProject(pData.project);
+      setSettingsForm({ name: pData.project.name, description: pData.project.description || '', github_repo: pData.project.github_repo || '' });
       setProjectMembers(pData.members || []);
       const sData = await api.listSecrets(id!, env) as any;
       setSecrets(sData.secrets);
 
-      // Fetch org members for the "Add Member" list
-      const oData = await api.getOrg(pData.project.org_id);
-      setOrgMembers(oData.members || []);
+      if (user?.role === 'admin') {
+        const uData = await api.listUsers();
+        setOrgMembers(uData.users || []);
+        const preData = await api.listPresets();
+        setAccessPresets(preData.presets || []);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -87,7 +103,7 @@ export default function ProjectDetailPage() {
   const loadAuditLogs = async () => {
     setAuditLoading(true);
     try {
-      const data = await api.getAuditLogs(id!) as any;
+      const data = await api.request('GET', `/audit-logs?projectId=${id}&limit=50`);
       setAuditLogs(data.logs || []);
     } catch (err) {
       console.error(err);
@@ -100,12 +116,13 @@ export default function ProjectDetailPage() {
     if (activeTab === 'audit') {
       loadAuditLogs();
     }
-  }, [activeTab]);
+  }, [activeTab, id]);
 
-  const handleAddProjectMember = async (userId: string, environments: string[]) => {
+  const handleAddProjectMember = async (userId: string, environments: string[], presetName?: string, expiresAt?: string | null) => {
     try {
-      await api.addProjectMember(id!, { userId, environments });
+      await api.addProjectMember(id!, { userId, environments, presetName, expiresAt });
       await loadData();
+      toast({ title: "Member Added" });
     } catch (err) {
       console.error(err);
     }
@@ -128,53 +145,53 @@ export default function ProjectDetailPage() {
       await api.upsertSecret(id!, { ...newSecret, environment: env });
       await loadData();
       setIsAddOpen(false);
-      setNewSecret({ key: '', value: '', environment: 'dev', can_view: true });
-      toast({ title: "Cryptographic Injection Success", description: `Primary key ${newSecret.key} has been persisted to ${env}.` });
+      setNewSecret({ key: '', value: '', environment: 'dev', can_view: true, isPersonal: false, type: 'env' });
+      toast({ title: "Secret Saved" });
     } catch (err: any) {
-      toast({ title: "Encryption Error", description: err.message, variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (sid: string) => {
-    if (!confirm('Are you sure you want to purge this secret?')) return;
+  const handleUpdateVisibility = async (secretId: string, canView: boolean) => {
     try {
-      await api.deleteSecret(id!, sid);
+      await api.updateSecretVisibility(id!, secretId, canView);
       await loadData();
-      toast({ title: "Secret Purged" });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleUpdateVisibility = async (secret: any, canView: boolean) => {
-    try {
-      await api.updateSecretVisibility(id!, secret.id, canView);
-      await loadData();
-      toast({ title: "Visibility Protocol Updated" });
+      toast({ title: "Visibility Updated" });
     } catch (err: any) {
-      toast({ title: "Update Failed", description: err.message, variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
 
-  const handleEdit = async (e: React.FormEvent) => {
+  const handleBulkImport = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
+    setBulkSaving(true);
     try {
-      await api.upsertSecret(id!, { 
-        key: editingSecret.key, 
-        value: editingSecret.value, 
-        can_view: editingSecret.can_view, 
-        environment: env 
-      });
+      const lines = bulkText.split('\n');
+      const parsed = lines.map(l => {
+        const match = l.trim().match(/^([^=]+)=(.*)$/);
+        if (match) {
+          let val = match[2].trim();
+          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+            val = val.slice(1, -1);
+          }
+          return { key: match[1].trim(), value: val, can_view: bulkCanView };
+        }
+        return null;
+      }).filter(Boolean);
+
+      if (!parsed.length) throw new Error("No valid KEY=VALUE pairs found.");
+      
+      await api.bulkUpsertSecrets(id!, { environment: env, secrets: parsed });
       await loadData();
-      setIsEditOpen(false);
-      toast({ title: "Secret Updated", description: `Key ${editingSecret.key} has been re-encrypted and saved.` });
+      setIsBulkOpen(false);
+      setBulkText('');
+      toast({ title: "Bulk Import Successful" });
     } catch (err: any) {
-      toast({ title: "Update Failed", description: err.message, variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
-      setSaving(false);
+      setBulkSaving(false);
     }
   };
 
@@ -182,32 +199,37 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     setSyncLoading(true);
     try {
-      await api.syncSecrets(id!, { fromEnv: syncForm.from, toEnv: syncForm.to });
+      await api.request('POST', `/projects/${id}/secrets/sync`, { fromEnv: syncForm.from, toEnv: syncForm.to });
       await loadData();
       setIsSyncOpen(false);
-      toast({ title: "Environment Sync Successful", description: `Secrets promoted from ${syncForm.from} to ${syncForm.to}.` });
+      toast({ title: "Sync Complete" });
     } catch (err: any) {
-      toast({ title: "Sync Failed", description: err.message, variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSyncLoading(false);
     }
   };
 
-  const handleUpdateClearance = async (e: React.FormEvent) => {
+  const handleUpdateSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUpdatingClearance(true);
     try {
-      await api.addProjectMember(id!, { 
-        userId: clearanceMember.id, 
-        environments: clearanceEnvs 
-      });
+      await api.updateProject(id!, settingsForm);
       await loadData();
-      setIsClearanceOpen(false);
-      toast({ title: "Security Clearance Updated", description: `${clearanceMember.name}'s access protocols have been re-calibrated.` });
+      setIsSettingsOpen(false);
+      toast({ title: "Project Updated" });
     } catch (err: any) {
-      toast({ title: "Clearance Update Failed", description: err.message, variant: "destructive" });
-    } finally {
-      setUpdatingClearance(false);
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!confirm('DELETE PROJECT: This will purge all secrets and members. This cannot be undone.')) return;
+    try {
+      await api.deleteProject(id!);
+      navigate('/');
+      toast({ title: "Project Deleted" });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -215,17 +237,53 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     setSavingWebhook(true);
     try {
-      // Create a temporary endpoint or use existing
-      // For now, we'll implement a simple POST in the background
       await api.request('POST', `/projects/${id}/webhooks`, { url: webhookUrl });
       setIsWebhookOpen(false);
       setWebhookUrl('');
-      toast({ title: "Webhook Configured", description: "Real-time security alerts are now active." });
+      toast({ title: "Webhook Configured" });
     } catch (err: any) {
-      toast({ title: "Configuration Failed", description: err.message, variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSavingWebhook(false);
     }
+  };
+
+  const handleDelete = async (sid: string) => {
+    if (!confirm('Delete this secret?')) return;
+    try {
+      await api.deleteSecret(id!, sid);
+      await loadData();
+      toast({ title: "Secret Deleted" });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateClearance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdatingClearance(true);
+    try {
+      await api.addProjectMember(id!, { userId: clearanceMember.id, environments: clearanceEnvs, presetName: clearancePreset, expiresAt: clearanceTTL || null });
+      await loadData();
+      setIsClearanceOpen(false);
+      toast({ title: "Access Updated" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setUpdatingClearance(false);
+    }
+  };
+
+  const downloadAsset = (secret: any) => {
+    const blob = new Blob([secret.value], { type: secret.metadata?.mime || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = secret.metadata?.filename || secret.key;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const toggleReveal = (sid: string) => {
@@ -237,45 +295,6 @@ export default function ProjectDetailPage() {
     toast({ title: "Copied to Clipboard" });
   };
 
-  const handleBulkImport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBulkSaving(true);
-    try {
-      const lines = bulkText.split('\n');
-      const parsedSecrets = [];
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-        
-        const match = trimmed.match(/^([^=]+)=(.*)$/);
-        if (match) {
-          let key = match[1].trim();
-          let value = match[2].trim();
-          
-          if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-            value = value.slice(1, -1);
-          }
-          
-          parsedSecrets.push({ key, value, can_view: bulkCanView });
-        }
-      }
-
-      if (parsedSecrets.length === 0) {
-        throw new Error("No valid KEY=VALUE pairs found.");
-      }
-
-      await api.bulkUpsertSecrets(id!, { environment: env, secrets: parsedSecrets });
-      await loadData();
-      setIsBulkOpen(false);
-      setBulkText('');
-      toast({ title: "Bulk Injection Complete", description: `Successfully injected ${parsedSecrets.length} secrets into ${env}.` });
-    } catch (err: any) {
-      toast({ title: "Bulk Import Failed", description: err.message, variant: "destructive" });
-    } finally {
-      setBulkSaving(false);
-    }
-  };
-
   const filteredSecrets = secrets.filter(s => s.key.toLowerCase().includes(search.toLowerCase()));
 
   if (loading && !project) return (
@@ -285,61 +304,58 @@ export default function ProjectDetailPage() {
   );
 
   return (
-    <div className="space-y-8">
-      {/* Project Header Widget */}
-      <div className="rounded-[2rem] border border-border/30 bg-card/30 p-6 shadow-xl shadow-primary/5 backdrop-blur-xl md:p-7">
+    <div className="space-y-8 pb-20">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm md:p-8">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-primary/80">
-              <Terminal className="size-3" />
-              <span>Infrastructure Identifier</span>
+            <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-primary/80">
+              <Terminal className="size-3.5" />
+              <span>Project Overview</span>
             </div>
             <div className="space-y-3">
-              <div className="font-mono text-sm text-muted-foreground">{project?.slug}</div>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">{project?.name}</h2>
+              <div className="flex items-center gap-3">
+                 <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{project?.name}</h2>
+                 <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} className="rounded-full h-8 w-8 hover:bg-muted opacity-40 hover:opacity-100">
+                    <Settings2 size={16} />
+                 </Button>
+              </div>
+              <p className="text-muted-foreground text-base max-w-xl leading-relaxed italic">
+                 {project?.description || "No description provided."}
+              </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
-                <KeyRound className="size-3" />
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-primary shadow-sm">
+                <KeyRound className="size-4" />
                 <span>Project Key</span>
-                <span className="font-mono text-[11px] lowercase tracking-normal text-primary/80">{project?.project_key}</span>
-                <button
-                  onClick={() => copyToClipboard(project?.project_key)}
-                  className="rounded-full p-1 transition-colors hover:bg-primary/10 hover:text-foreground"
-                >
-                  <CopyIcon className="size-3" />
+                <span className="font-mono text-xs lowercase tracking-normal text-primary/80 ml-2">{project?.project_key}</span>
+                <button onClick={() => copyToClipboard(project?.project_key)} className="rounded-full p-1.5 transition-colors hover:bg-primary/10">
+                  <CopyIcon className="size-3.5" />
                 </button>
               </div>
-              <div className="rounded-full border border-border/40 bg-background/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                {projectMembers.length} collaborators
+              <div className="rounded-xl border border-border bg-background/70 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground shadow-sm">
+                {projectMembers.length} team members
               </div>
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-3 xl:max-w-4xl xl:items-end">
+          <div className="flex w-full flex-col gap-4 xl:max-w-4xl xl:items-end">
             <Tabs value={env} onValueChange={setEnv} className="w-full xl:w-auto">
-              <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl border border-border/40 bg-muted/30 p-1.5 backdrop-blur-xl xl:w-auto xl:min-w-[420px]">
-                <TabsTrigger value="dev" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-[11px] uppercase tracking-[0.18em]">
-                  Development
-                </TabsTrigger>
-                <TabsTrigger value="staging" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-[11px] uppercase tracking-[0.18em]">
-                  Staging
-                </TabsTrigger>
-                <TabsTrigger value="prod" className="rounded-xl px-4 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-[11px] uppercase tracking-[0.18em]">
-                  Production
-                </TabsTrigger>
+              <TabsList className="grid h-auto w-full grid-cols-3 rounded-xl border border-border bg-muted/30 p-1 xl:w-auto xl:min-w-[320px]">
+                <TabsTrigger value="dev" className="rounded-lg px-4 py-2 font-bold text-[10px] uppercase tracking-widest">Dev</TabsTrigger>
+                <TabsTrigger value="staging" className="rounded-lg px-4 py-2 font-bold text-[10px] uppercase tracking-widest">Staging</TabsTrigger>
+                <TabsTrigger value="prod" className="rounded-lg px-4 py-2 font-bold text-[10px] uppercase tracking-widest">Prod</TabsTrigger>
               </TabsList>
             </Tabs>
             {user?.role === 'admin' && (
               <div className="flex flex-wrap gap-3 xl:justify-end">
-                <Button onClick={() => setIsAddOpen(true)} className="h-11 rounded-xl px-5 font-bold shadow-lg shadow-primary/15 hover-elevate">
-                  <PlusIcon className="mr-2 size-4" /> Add Secret
+                <Button onClick={() => setIsAddOpen(true)} className="h-9 rounded-lg px-4 font-bold shadow-sm group text-sm">
+                  <PlusIcon className="mr-1.5 size-4 group-hover:rotate-90 transition-transform" /> Add Secret
                 </Button>
-                <Button onClick={() => setIsBulkOpen(true)} variant="outline" className="h-11 rounded-xl px-5 font-bold border-border/40 bg-background/70 hover:bg-muted/70">
-                  <FileUp className="mr-2 size-4" /> Bulk Import
+                <Button onClick={() => setIsBulkOpen(true)} variant="outline" className="h-9 rounded-lg px-4 font-bold text-sm">
+                  <FileUp className="mr-1.5 size-4" /> Bulk Import
                 </Button>
-                <Button onClick={() => setIsSyncOpen(true)} variant="secondary" className="h-11 rounded-xl px-5 font-bold border border-primary/15 bg-primary/5 text-primary hover:bg-primary/10">
-                  <ArrowLeftRight className="mr-2 size-4" /> Sync Env
+                <Button onClick={() => setIsSyncOpen(true)} variant="outline" className="h-9 rounded-lg px-4 font-bold text-sm">
+                  <ArrowRightLeft className="mr-1.5 size-4" /> Sync Env
                 </Button>
               </div>
             )}
@@ -348,154 +364,156 @@ export default function ProjectDetailPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="h-auto w-full justify-start gap-3 rounded-2xl border border-border/20 bg-muted/10 p-1.5">
-          <TabsTrigger value="secrets" className="rounded-xl px-4 py-2.5 font-bold text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-            Secrets Nexus
-          </TabsTrigger>
-          <TabsTrigger value="audit" className="rounded-xl px-4 py-2.5 font-bold text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-            Audit Trail
-          </TabsTrigger>
-          <TabsTrigger value="team" className="rounded-xl px-4 py-2.5 font-bold text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-            Team Members
-          </TabsTrigger>
+        <TabsList className="h-auto justify-start gap-2 rounded-xl border border-border bg-muted/10 p-1">
+          <TabsTrigger value="secrets" className="rounded-lg px-4 py-2 font-bold text-[11px] uppercase tracking-widest">Secrets</TabsTrigger>
+          <TabsTrigger value="audit" className="rounded-lg px-4 py-2 font-bold text-[11px] uppercase tracking-widest">Audit Logs</TabsTrigger>
+          <TabsTrigger value="team" className="rounded-lg px-4 py-2 font-bold text-[11px] uppercase tracking-widest">Team</TabsTrigger>
         </TabsList>
       </Tabs>
 
       {activeTab === 'secrets' ? (
         <>
-          {/* Stats / Info Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <Card className="p-6 rounded-[2rem] bg-card/30 backdrop-blur-xl border-border/40 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+         <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
             <div>
-               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Active Secrets</p>
-               <h4 className="text-3xl font-black mt-1">{secrets.length}</h4>
+               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Active Secrets</p>
+               <h4 className="text-2xl font-bold tracking-tight">{secrets.length}</h4>
             </div>
-            <div className="h-12 w-12 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
-               <ShieldCheck className="size-6" />
+            <div className="h-10 w-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
+               <ShieldCheck className="size-5" />
             </div>
          </Card>
-         <Card className="p-6 rounded-[2rem] bg-card/30 backdrop-blur-xl border-border/40 flex items-center justify-between">
+         <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
             <div>
-               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Environment</p>
-               <h4 className="text-2xl font-bold mt-1 uppercase text-primary">{env}</h4>
+               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Project Wide</p>
+               <h4 className="text-2xl font-bold tracking-tight">{secrets.filter(s => !s.is_personal).length}</h4>
             </div>
-             <div className="h-12 w-12 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
-                <FilterIcon className="size-6" />
+             <div className="h-10 w-10 rounded-xl bg-blue-500/5 text-blue-500 flex items-center justify-center">
+                <Globe className="size-5" />
              </div>
          </Card>
-         <Card className="p-6 rounded-[2rem] bg-card/30 backdrop-blur-xl border-border/40 flex items-center justify-between group cursor-help">
-            <div className="flex-1">
-               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Encryption</p>
-               <h4 className="text-2xl font-bold mt-1 truncate">AES-GCM</h4>
+         <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
+            <div>
+               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">My Personal</p>
+               <h4 className="text-2xl font-bold tracking-tight">{secrets.filter(s => s.is_personal).length}</h4>
             </div>
-            <div className="h-12 w-12 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
-               <KeyRound className="size-6" />
+            <div className="h-10 w-10 rounded-xl bg-amber-500/5 text-amber-500 flex items-center justify-center">
+               <UserIcon className="size-5" />
             </div>
          </Card>
       </div>
 
-      {/* Main Table Card */}
-      <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-border/40 shadow-2xl overflow-hidden relative">
-        <div className="p-8 border-b border-border/20 flex flex-col md:flex-row justify-between items-center gap-4">
+      <Card className="rounded-xl bg-card border-border shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-border flex flex-col md:flex-row justify-between items-center gap-3 bg-muted/5">
            <div className="relative w-full md:max-w-md group">
-              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
               <Input 
-                 placeholder="Search cryptographic keys..." 
-                 className="pl-11 h-12 rounded-2xl bg-muted/20 border-border/40 focus:bg-background transition-all"
+                 placeholder="Search secrets..." 
+                 className="pl-9 h-9 rounded-lg bg-background border-border text-sm"
                  value={search}
                  onChange={e => setSearch(e.target.value)}
               />
-           </div>
-           <div className="flex gap-2">
-              <Button variant="outline" className="rounded-xl h-11 border-border/40 font-bold hover:bg-muted/80">
-                 Export JSON
-              </Button>
            </div>
         </div>
 
         <div className="overflow-x-auto scrollbar-none">
           <Table>
             <TableHeader className="bg-muted/10">
-              <TableRow className="border-border/10 hover:bg-transparent">
-                <TableHead className="w-[35%] py-5 pl-10 text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground/60">Key Identifier</TableHead>
-                <TableHead className="w-[45%] text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground/60">Encrypted Payload</TableHead>
-                <TableHead className="w-[20%] text-right pr-10 text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground/60">Modifications</TableHead>
+              <TableRow className="border-border hover:bg-transparent">
+                <TableHead className="w-[30%] py-6 pl-12 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Variable Name</TableHead>
+                <TableHead className="w-[40%] text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Value</TableHead>
+                <TableHead className="w-[15%] text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Show in UI</TableHead>
+                <TableHead className="w-[15%] text-right pr-12 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 [1,2,3].map(i => (
-                  <TableRow key={i} className="border-border/10 animate-pulse">
-                    <TableCell className="pl-10"><div className="h-5 w-32 bg-muted/40 rounded-lg" /></TableCell>
-                    <TableCell><div className="h-5 w-64 bg-muted/40 rounded-lg" /></TableCell>
-                    <TableCell className="pr-10 text-right"><div className="h-8 w-8 bg-muted/40 rounded-lg ml-auto" /></TableCell>
+                  <TableRow key={i} className="border-border animate-pulse">
+                    <TableCell className="pl-12 py-8"><div className="h-10 w-48 bg-muted/40 rounded-xl" /></TableCell>
+                    <TableCell><div className="h-10 w-80 bg-muted/40 rounded-xl" /></TableCell>
+                    <TableCell><div className="h-6 w-12 bg-muted/40 rounded-full" /></TableCell>
+                    <TableCell className="pr-12 text-right"><div className="h-10 w-10 bg-muted/40 rounded-xl ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredSecrets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-64 text-center">
+                  <TableCell colSpan={4} className="h-80 text-center">
                      <div className="flex flex-col items-center justify-center opacity-30">
-                        <ShieldCheck size={48} className="mb-4" />
-                        <p className="font-bold text-lg italic">No secrets found in this cluster.</p>
+                        <ShieldQuestion size={64} className="mb-6 text-primary" />
+                        <p className="font-bold text-2xl tracking-tight italic">No secrets found.</p>
                      </div>
                   </TableCell>
                 </TableRow>
               ) : filteredSecrets.map(secret => (
-                <TableRow key={secret.id} className="border-border/10 group hover:bg-muted/10 transition-colors">
-                  <TableCell className="pl-10">
-                     <div className="flex items-center gap-3">
-                        <div className="font-mono text-sm font-bold text-foreground bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/20 inline-block">
-                           {secret.key}
+                <TableRow key={secret.id} className="border-border group hover:bg-primary/[0.01]">
+                  <TableCell className="pl-6 py-3">
+                     <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2.5">
+                           <div className={`h-8 w-8 rounded-lg flex items-center justify-center border ${
+                              secret.type === 'file' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                              'bg-primary/5 text-primary border-primary/20'
+                           }`}>
+                              {secret.type === 'file' ? <FileText size={16} /> : <KeyRound size={16} />}
+                           </div>
+                           <div className="font-mono text-sm font-bold text-foreground bg-background px-3 py-1.5 rounded-lg border border-border inline-block shadow-inner transition-all">
+                              {secret.key}
+                           </div>
+                           {secret.is_personal && (
+                              <TooltipProvider>
+                                 <Tooltip>
+                                    <TooltipTrigger>
+                                       <div className="bg-amber-500/10 text-amber-600 border border-amber-500/20 p-1.5 rounded-lg">
+                                          <UserIcon size={12} />
+                                       </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="rounded-lg border-border font-bold text-[10px]">Personal Variable</TooltipContent>
+                                 </Tooltip>
+                              </TooltipProvider>
+                           )}
                         </div>
-                        {!secret.can_view && (
-                          <button 
-                            onClick={() => handleUpdateVisibility(secret, true)}
-                            className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-amber-500/20 transition-colors"
-                            title="Click to mark as Public"
-                          >
-                            <LockIcon size={10} /> Restricted
-                          </button>
-                        )}
-                        {secret.can_view && (
-                           <button 
-                             onClick={() => handleUpdateVisibility(secret, false)}
-                             className="bg-primary/10 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-primary/20 transition-colors opacity-0 group-hover:opacity-100"
-                             title="Click to mark as Restricted"
-                           >
-                             <EyeIcon size={10} /> Public
-                           </button>
+                        {secret.type === 'file' && (
+                           <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50 ml-1.5 flex items-center gap-1.5">
+                              <ShieldCheck size={10} className="text-emerald-500" />
+                              {secret.metadata?.filename} 
+                           </div>
                         )}
                       </div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                      <div className="flex items-center gap-3">
-                        <div className={`px-4 py-2.5 rounded-xl border transition-all truncate max-w-sm ${revealed[secret.id] ? 'bg-background border-primary/20 text-foreground shadow-inner' : 'bg-muted/30 border-border/40 text-muted-foreground/40'}`}>
-                           {revealed[secret.id] ? (secret.can_view ? secret.value : 'SECRET_RESTRICTED') : '••••••••••••••••••••••••••••••••'}
+                        <div className={`px-4 py-2 rounded-lg border transition-all truncate max-w-sm font-bold shadow-inner ${revealed[secret.id] ? 'bg-background border-primary/30 text-foreground' : 'bg-muted/30 border-border text-muted-foreground/20'}`}>
+                           {revealed[secret.id] ? (secret.can_view ? (secret.type === 'file' ? '•••• ENCRYPTED ••••' : secret.value) : 'RESTRICTED') : '••••••••••••••••••••••••'}
                         </div>
                         {secret.can_view && (
-                           <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100">
-                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={() => toggleReveal(secret.id)}>
-                                 {revealed[secret.id] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform scale-95 group-hover:scale-100">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg border border-transparent hover:border-border shadow-sm" onClick={() => toggleReveal(secret.id)}>
+                                 {revealed[secret.id] ? <EyeOffIcon size={14} /> : <EyeIcon size={14} />}
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-background" onClick={(e) => { e.stopPropagation(); copyToClipboard(secret.value); }}>
-                                 <CopyIcon size={16} />
-                              </Button>
+                              {secret.type === 'file' ? (
+                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg border border-transparent hover:border-border shadow-sm" onClick={() => downloadAsset(secret)}>
+                                    <Download size={14} />
+                                 </Button>
+                              ) : (
+                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg border border-transparent hover:border-border shadow-sm" onClick={(e) => { e.stopPropagation(); copyToClipboard(secret.value); }}>
+                                    <CopyIcon size={14} />
+                                 </Button>
+                              )}
                            </div>
                         )}
                      </div>
                   </TableCell>
-                  <TableCell className="text-right pr-10">
-                     <div className="flex justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-10 w-10 rounded-xl text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100" 
-                          onClick={() => { setEditingSecret(secret); setIsEditOpen(true); }}
-                        >
-                           <Pencil size={18} />
-                        </Button>
-                         <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100" onClick={() => handleDelete(secret.id)}>
-                            <TrashIcon size={18} />
+                  <TableCell>
+                     <Switch 
+                        checked={secret.can_view} 
+                        onCheckedChange={(val) => handleUpdateVisibility(secret.id, val)}
+                        className="data-[state=checked]:bg-emerald-500"
+                     />
+                  </TableCell>
+                  <TableCell className="text-right pr-6">
+                     <div className="flex justify-end gap-1.5">
+                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/5 transition-all opacity-0 group-hover:opacity-100" onClick={() => handleDelete(secret.id)}>
+                            <TrashIcon size={16} />
                          </Button>
                      </div>
                   </TableCell>
@@ -504,199 +522,75 @@ export default function ProjectDetailPage() {
             </TableBody>
           </Table>
         </div>
-        
-        <div className="p-6 bg-muted/5 flex justify-center border-t border-border/10">
-           <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-              <Loader2 className="size-3" /> System idle // Waiting for local injection
-           </div>
-        </div>
       </Card>
-
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="sm:max-w-[520px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
-          <div className="p-10 pb-6">
-            <DialogHeader className="mb-8">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <PlusIcon size={32} />
-              </div>
-              <DialogTitle className="text-3xl font-bold tracking-tight">New Secret Injection</DialogTitle>
-              <DialogDescription className="text-base">
-                Securely persist an encrypted environment key into the <span className="text-primary font-bold uppercase">{env}</span> runtime cluster.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form id="secret-form" onSubmit={handleCreate} className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="s-key" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Key Identifier (SHOUT_CASE)</Label>
-                <Input
-                  id="s-key"
-                  placeholder="DATABASE_VORTEX_URL"
-                  className="h-14 rounded-2xl bg-muted/30 border-border/40 px-5 focus:bg-background transition-all font-mono font-bold"
-                  value={newSecret.key}
-                  onChange={e => setNewSecret(p => ({ ...p, key: e.target.value.toUpperCase().replace(/\s+/g, '_') }))}
-                  required
-                />
-              </div>
-              <div className="space-y-3">
-                <Label htmlFor="s-val" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Payload (Secret Value)</Label>
-                <Input
-                  id="s-val"
-                  type="password"
-                  placeholder="e.g. postgres://cluster.vortex.link/main"
-                  className="h-14 rounded-2xl bg-muted/30 border-border/40 px-5 focus:bg-background transition-all font-mono"
-                  value={newSecret.value}
-                  onChange={e => setNewSecret(p => ({ ...p, value: e.target.value }))}
-                  required
-                />
-              </div>
-              
-              <div className="flex items-center justify-between p-5 rounded-2xl bg-muted/20 border border-border/30">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-bold">Dashboard Viewing Protocol</Label>
-                    <p className="text-xs text-muted-foreground font-medium">If disabled, this key cannot be viewed in browser or exported to .env</p>
-                  </div>
-                  <Switch 
-                    checked={newSecret.can_view}
-                    onCheckedChange={(val) => setNewSecret(p => ({ ...p, can_view: val }))}
-                  />
-               </div>
-            </form>
-          </div>
-          
-          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
-            <Button form="secret-form" type="submit" disabled={saving} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
-              {saving ? <Loader2 className="animate-spin" /> : "Inject Cryptographic Key"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
-        <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
-          <div className="p-10 pb-6">
-            <DialogHeader className="mb-6">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <FileUp size={32} />
-              </div>
-              <DialogTitle className="text-3xl font-bold tracking-tight">Bulk Secret Import</DialogTitle>
-              <DialogDescription className="text-base">
-                Paste your <span className="font-mono text-xs font-bold bg-muted/50 px-1.5 py-0.5 rounded">.env</span> file content below to inject multiple secrets into <span className="text-primary font-bold uppercase">{env}</span>.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form id="bulk-form" onSubmit={handleBulkImport} className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="bulk-text" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Environment Protocol Data (.env format)</Label>
-                <Textarea
-                  id="bulk-text"
-                  placeholder="DB_URL=postgres://...&#10;API_KEY=sk_test_...&#10;# This is a comment"
-                  className="min-h-[250px] rounded-2xl bg-muted/30 border-border/40 px-5 py-4 focus:bg-background transition-all font-mono text-sm leading-relaxed"
-                  value={bulkText}
-                  onChange={e => setBulkText(e.target.value)}
-                  required
-                />
-              </div>
-
-               <div className="flex items-center justify-between p-5 rounded-2xl bg-muted/20 border border-border/30">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-bold">Standard Visibility (Batch)</Label>
-                    <p className="text-xs text-muted-foreground font-medium">Apply this protocol to all secrets in this import batch</p>
-                  </div>
-                  <Switch 
-                    checked={bulkCanView}
-                    onCheckedChange={setBulkCanView}
-                  />
-               </div>
-            </form>
-          </div>
-          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
-            <Button form="bulk-form" type="submit" disabled={bulkSaving} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
-              {bulkSaving ? <Loader2 className="animate-spin" /> : `Import ${bulkText.split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length} Detectable Keys`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-        </Dialog>
       </>
       ) : activeTab === 'audit' ? (
         <div className="space-y-6">
-           <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-border/40 shadow-2xl overflow-hidden p-10">
-              <div className="flex justify-between items-end mb-10">
-                <div>
-                   <h3 className="text-2xl font-black tracking-tight flex items-center gap-3">
-                      <Terminal className="size-6 text-primary" /> Forensic Audit Trail
-                   </h3>
-                   <p className="text-muted-foreground mt-2">Real-time monitoring of all cryptographic actions and secret access.</p>
+           <Card className="rounded-xl bg-card border-border shadow-sm overflow-hidden p-6 relative">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                <div className="space-y-2">
+                   <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-sm">
+                      <History className="size-5" />
+                   </div>
+                   <h3 className="text-2xl font-bold tracking-tight">Audit Logs</h3>
+                   <p className="text-muted-foreground text-sm italic max-w-xl">Activity log for configuration changes and access events.</p>
                 </div>
-                <div className="flex gap-3">
-                   <Button variant="outline" onClick={() => setIsWebhookOpen(true)} className="rounded-xl border-border/40 font-bold bg-primary/5 text-primary border-primary/20">
-                      <ShieldCheck className="size-4 mr-2" /> Webhooks
+                <div className="flex flex-wrap gap-2">
+                   <Button variant="outline" onClick={() => navigate('/audit-logs', { state: { projectId: id } })} className="rounded-lg h-9 px-4 border-border bg-background hover:bg-muted/80 font-bold transition-all group text-xs">
+                      Full Dashboard <ArrowRightLeft className="size-3.5 ml-2 group-hover:rotate-90 transition-transform" />
                    </Button>
-                   <Button variant="outline" onClick={loadAuditLogs} disabled={auditLoading} className="rounded-xl border-border/40 font-bold">
-                      {auditLoading ? <Loader2 className="animate-spin size-4 mr-2" /> : <ArrowLeftRight className="size-4 mr-2 rotate-90" />} Refresh
+                   <Button variant="outline" onClick={loadAuditLogs} disabled={auditLoading} className="rounded-lg h-9 px-4 border-border bg-background hover:bg-muted/80 font-bold transition-all text-xs">
+                      {auditLoading ? <Loader2 className="animate-spin size-4 mr-2" /> : <Activity className="size-4 mr-2" />} Refresh
                    </Button>
                 </div>
               </div>
 
               <div className="relative">
-                {/* Timeline Line */}
-                <div className="absolute left-10 top-0 bottom-0 w-px bg-border/20" />
-
+                <div className="absolute left-10 top-0 bottom-0 w-px bg-border rounded-full" />
                 <div className="space-y-8 relative">
-                   {auditLogs.length === 0 && !auditLoading && (
-                     <div className="py-20 text-center opacity-30">
-                        <AlertCircle size={48} className="mx-auto mb-4" />
-                        <p className="font-bold italic">No logs recorded for this infrastructure yet.</p>
-                     </div>
-                   )}
-                   
                    {auditLogs.map((log) => (
-                     <div key={log.id} className="flex gap-10 group">
-                        <div className="relative z-10">
-                           <div className={`h-20 w-20 rounded-3xl flex items-center justify-center border-2 transition-all ${
-                             log.action === 'secret_read' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 scale-110' :
-                             log.action.includes('write') ? 'bg-primary/10 border-primary/20 text-primary' :
-                             'bg-muted/10 border-border/20 text-muted-foreground'
+                     <div key={log.id} className="flex gap-6 group">
+                        <div className="relative z-10 pt-1">
+                           <div className={`h-12 w-12 rounded-xl flex items-center justify-center border transition-all shadow-sm ${
+                             log.action === 'secret_read' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
+                             log.action.includes('write') ? 'bg-primary/10 border-primary/30 text-primary' :
+                             'bg-muted/20 border-border text-muted-foreground'
                            }`}>
-                              {log.action === 'secret_read' ? <EyeIcon size={32} /> : 
-                               log.action.includes('write') ? <ShieldCheck size={32} /> :
-                               <Terminal size={32} />}
+                              {log.action === 'secret_read' ? <EyeIcon size={20} /> : 
+                               log.action.includes('write') ? <ShieldCheck size={20} /> :
+                               <Terminal size={20} />}
                            </div>
                         </div>
-                        <div className="flex-1 pb-8 border-b border-border/10">
-                           <div className="flex justify-between items-start">
+                        <div className="flex-1 pb-6 border-b border-border last:border-0">
+                           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                               <div>
-                                 <div className="flex items-center gap-3">
-                                    <h4 className="font-black text-lg uppercase tracking-tight">{log.action.replace(/_/g, ' ')}</h4>
-                                    {log.action === 'secret_read' && (
-                                      <span className="bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg shadow-amber-500/20">RESTRICTED ACCESS</span>
-                                    )}
+                                 <h4 className="font-bold text-base uppercase tracking-tight">{log.action.replace(/_/g, ' ')}</h4>
+                                 <div className="flex items-center gap-2 text-muted-foreground font-medium mt-1">
+                                    <span className="text-foreground font-bold text-xs">{log.actor_name || 'System'}</span>
                                  </div>
-                                 <p className="text-muted-foreground text-sm mt-1">
-                                    Action performed by <span className="text-foreground font-bold">{log.actor_name || 'System Operator'}</span>
-                                    <span className="mx-2 text-border">|</span>
-                                    <span className="font-mono text-xs">{log.actor_email}</span>
-                                 </p>
                               </div>
                               <div className="text-right">
-                                 <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                 <div className="text-xs font-bold text-foreground">
                                     {new Date(log.created_at).toLocaleDateString()}
                                  </div>
-                                 <div className="text-[10px] text-primary font-mono mt-1">
-                                    {new Date(log.created_at).toLocaleTimeString()}
-                                 </div>
+                                 <div className="text-[10px] text-primary font-mono font-bold">{new Date(log.created_at).toLocaleTimeString()}</div>
                               </div>
                            </div>
                            {log.metadata && (
-                             <div className="mt-4 p-4 rounded-2xl bg-muted/20 border border-border/10 font-mono text-[10px] text-muted-foreground/80 grid grid-cols-2 gap-4">
-                                <div>
-                                   <span className="opacity-40 uppercase block mb-1">Resource Context</span>
-                                   {log.metadata.details || log.metadata.key || "System Level"}
-                                </div>
-                                <div>
-                                   <span className="opacity-40 uppercase block mb-1">Injected Env</span>
-                                   <span className="text-primary font-bold">{log.metadata.env || "dev"}</span>
-                                </div>
-                             </div>
+                              <div className="mt-4 p-4 rounded-xl bg-muted/5 border border-border grid grid-cols-1 md:grid-cols-2 gap-4 shadow-inner">
+                                 <div className="space-y-1">
+                                    <span className="text-[9px] opacity-40 uppercase font-bold tracking-widest block">Variable</span>
+                                    <div className="text-foreground font-bold text-xs bg-background p-2 rounded-lg border border-border inline-block min-w-[150px] font-mono">
+                                       {log.metadata.key || "General Config"}
+                                    </div>
+                                 </div>
+                                 <div className="space-y-1">
+                                    <span className="text-[9px] opacity-40 uppercase font-bold tracking-widest block">Env</span>
+                                    <Badge variant="outline" className="text-primary font-bold text-[10px] px-3 py-1 rounded-lg border-primary/20 bg-primary/5 uppercase">
+                                       {log.metadata.env || "dev"}
+                                    </Badge>
+                                 </div>
+                              </div>
                            )}
                         </div>
                      </div>
@@ -706,71 +600,80 @@ export default function ProjectDetailPage() {
            </Card>
         </div>
       ) : (
-        <div className="space-y-6">
-          <Card className="overflow-hidden rounded-[2.25rem] border-border/30 bg-card/40 p-6 shadow-2xl backdrop-blur-3xl md:p-8">
-            <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+         <div className="space-y-6">
+          <Card className="overflow-hidden rounded-xl border-border bg-card p-6 shadow-sm md:p-8">
+            <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Users className="size-5" />
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-black tracking-tight">Active Collaborators</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Environment-level access is organized by collaborator, with quick clearance edits for each member.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <div className="rounded-full border border-border/30 bg-background/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                    {projectMembers.length} members
-                  </div>
-                  <div className="rounded-full border border-primary/20 bg-primary/8 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
-                    {env.toUpperCase()} focus
-                  </div>
+                  <h3 className="text-2xl font-bold tracking-tight">Team Members</h3>
                 </div>
               </div>
-              <Button onClick={() => setIsAddMemberOpen(true)} className="h-11 rounded-xl px-5 font-bold shadow-lg shadow-primary/15 hover-elevate">
-                <PlusIcon className="mr-2 size-4" /> Add Project Member
+              <Button onClick={() => setIsAddMemberOpen(true)} className="h-9 rounded-lg px-4 font-bold text-sm shadow-sm group">
+                <PlusIcon className="mr-1.5 size-4 group-hover:rotate-90 transition-transform" /> Add Member
               </Button>
             </div>
 
-            <div className="space-y-3">
-              {projectMembers.length === 0 ? (
-                <div className="rounded-[1.75rem] border border-dashed border-border/30 bg-muted/10 px-6 py-16 text-center">
-                  <Users className="mx-auto mb-4 size-10 text-muted-foreground/40" />
-                  <p className="text-lg font-bold">No collaborators added yet.</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Invite a member to start managing project-level access.</p>
-                </div>
-              ) : (
-                projectMembers.map(m => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {projectMembers.map(m => {
+                const isExpired = m.expires_at && new Date(m.expires_at) < new Date();
+                return (
                   <div
                     key={m.id}
-                    className="rounded-[1.75rem] border border-border/20 bg-background/60 p-5 transition-colors hover:border-primary/20 hover:bg-primary/[0.03] md:p-6"
+                    className={`rounded-xl border p-5 transition-all hover:shadow-sm relative overflow-hidden ${
+                      isExpired ? 'border-destructive/20 bg-destructive/[0.02] opacity-60' : 'border-border bg-background/60 hover:border-primary/20'
+                    }`}
                   >
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 font-bold text-primary">
-                          {m.name.charAt(0)}
+                    <div className="flex flex-col gap-5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-bold text-base text-primary border border-primary/10 shadow-sm">
+                            {m.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-bold tracking-tight text-foreground">{m.name}</div>
+                            <div className="truncate text-[10px] font-mono text-muted-foreground/60 italic mt-0.5">{m.email}</div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="truncate text-base font-bold">{m.name}</div>
-                          <div className="truncate text-sm text-muted-foreground">{m.email}</div>
+                        <div className="flex flex-col items-end gap-1.5">
+                           <Badge className={`rounded-md px-2 py-0.5 font-bold text-[8px] uppercase tracking-widest ${m.role === 'admin' ? 'bg-amber-500/10 text-amber-600' : 'bg-blue-500/10 text-blue-600'}`}>
+                              {m.role}
+                           </Badge>
+                           {m.preset_name && (
+                              <div className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/40 flex items-center gap-1">
+                                 <ShieldCheck size={9} /> {m.preset_name}
+                              </div>
+                           )}
                         </div>
                       </div>
 
-                      <div className="flex flex-1 flex-col gap-3 lg:max-w-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                          Clearance Levels
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                           <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 ml-0.5">
+                             Access Matrix
+                           </div>
+                           {m.expires_at && (
+                              <TooltipProvider>
+                                 <Tooltip>
+                                    <TooltipTrigger className="flex items-center gap-1 text-[9px] font-bold text-amber-600 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
+                                       <Clock size={9} /> 
+                                       {isExpired ? 'EXPIRED' : `TTL: ${new Date(m.expires_at).toLocaleDateString()}`}
+                                    </TooltipTrigger>
+                                    <TooltipContent className="font-bold text-[10px]">Auto-revocation active.</TooltipContent>
+                                 </Tooltip>
+                              </TooltipProvider>
+                           )}
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {['dev', 'staging', 'prod'].map(level => (
                             <div
                               key={level}
-                              className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${
+                              className={`rounded-lg border px-3 py-1 text-[9px] font-bold uppercase tracking-widest transition-all ${
                                 m.environments?.includes(level)
                                   ? 'border-primary/30 bg-primary/10 text-primary'
-                                  : 'border-border/20 bg-muted/15 text-muted-foreground/45'
+                                  : 'border-border/10 bg-muted/5 text-muted-foreground/30 opacity-60'
                               }`}
                             >
                               {level}
@@ -779,286 +682,305 @@ export default function ProjectDetailPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 self-end lg:self-auto">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="rounded-xl border border-border/20 bg-background/70 hover:bg-primary/10 hover:text-primary transition-colors"
-                          title="Edit Security Clearance"
-                          onClick={() => {
-                            setClearanceMember(m);
-                            setClearanceEnvs(m.environments || []);
-                            setIsClearanceOpen(true);
-                          }}
-                        >
-                          <Settings2 size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="rounded-xl border border-border/20 bg-background/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
-                          title="Revoke All Access"
-                          onClick={() => handleRemoveProjectMember(m.id)}
-                        >
-                          <TrashIcon size={16} />
-                        </Button>
+                      <div className="pt-4 border-t border-border flex items-center justify-between">
+                        <div className="flex gap-1.5">
+                           <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg border border-border bg-background hover:bg-primary/5 hover:text-primary transition-all"
+                              onClick={() => {
+                                setClearanceMember(m);
+                                setClearanceEnvs(m.environments || []);
+                                setClearancePreset(m.preset_name || '');
+                                setClearanceTTL(m.expires_at ? new Date(m.expires_at).toISOString().split('T')[0] : '');
+                                setIsClearanceOpen(true);
+                              }}
+                            >
+                              <Settings2 size={14} />
+                           </Button>
+                           <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg border border-border bg-background hover:bg-destructive/5 hover:text-destructive transition-all"
+                              onClick={() => handleRemoveProjectMember(m.id)}
+                            >
+                              <TrashIcon size={14} />
+                           </Button>
+                        </div>
+                        <ArrowRight className="size-4 text-muted-foreground/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                       </div>
                     </div>
                   </div>
-                ))
-              )}
+                );
+              })}
             </div>
           </Card>
-
-           <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
-             <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
-               <div className="p-8">
-                 <DialogHeader className="mb-8">
-                   <DialogTitle className="text-3xl font-black tracking-tight">Access Provisioning</DialogTitle>
-                   <DialogDescription>
-                     Invite an organization member to this cryptographic project nexus.
-                   </DialogDescription>
-                 </DialogHeader>
-
-                 <div className="space-y-6">
-                    <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground ml-1">Select Member from Org</Label>
-                    <div className="rounded-2xl border border-border/30 overflow-y-auto max-h-[300px] bg-muted/10 scrollbar-none">
-                      {orgMembers.filter(u => !projectMembers.find(m => m.id === u.id)).map(u => (
-                        <button 
-                          key={u.id} 
-                          onClick={() => handleAddProjectMember(u.id, ['dev'])}
-                          className="w-full flex items-center justify-between p-4 border-b border-border/10 last:border-0 hover:bg-primary/5 transition-all text-left group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-muted/40 text-muted-foreground flex items-center justify-center text-xs font-bold group-hover:bg-primary/20 group-hover:text-primary transition-colors">
-                              {u.name.charAt(0)}
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium group-hover:font-bold transition-all">{u.name}</div>
-                              <div className="text-[10px] text-muted-foreground">{u.email}</div>
-                            </div>
-                          </div>
-                           <PlusIcon className="size-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-                        </button>
-                      ))}
-                      {orgMembers.filter(u => !projectMembers.find(m => m.id === u.id)).length === 0 && (
-                        <div className="p-10 text-center opacity-40 italic text-sm">No remaining org members to invite.</div>
-                      )}
-                    </div>
-                 </div>
-               </div>
-               <DialogFooter className="p-8 pt-0">
-                  <Button variant="outline" onClick={() => setIsAddMemberOpen(false)} className="w-full h-12 rounded-xl font-bold">Cancel Provisioning</Button>
-               </DialogFooter>
-             </DialogContent>
-           </Dialog>
         </div>
       )}
-      <Dialog open={isSyncOpen} onOpenChange={setIsSyncOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
-          <div className="p-10 pb-6">
-            <DialogHeader className="mb-6">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <ArrowLeftRight size={32} />
+
+      {/* Advanced Feature Dialogs */}
+      
+      <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
+        <DialogContent className="sm:max-w-[650px] rounded-3xl p-0 border-border overflow-hidden shadow-2xl bg-card">
+          <div className="p-12 pb-8">
+            <DialogHeader className="mb-8">
+              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm">
+                <FileUp size={36} />
               </div>
-              <DialogTitle className="text-3xl font-bold tracking-tight">Sync Environments</DialogTitle>
-              <DialogDescription className="text-base text-muted-foreground">
-                Clone all secrets from one environment cluster to another. This will **overwrite** duplicates.
+              <DialogTitle className="text-4xl font-bold tracking-tighter leading-tight">Bulk Import</DialogTitle>
+              <DialogDescription className="text-lg font-medium text-muted-foreground mt-2 italic">
+                Paste an entire <span className="font-mono text-xs font-bold bg-muted/80 px-2 py-1 rounded">.env</span> file into the <span className="text-primary font-bold uppercase">{env}</span> environment.
               </DialogDescription>
             </DialogHeader>
-            
-            <form id="sync-form" onSubmit={handleSync} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <Label className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Source Cluster</Label>
-                  <select 
-                    className="w-full h-12 rounded-xl bg-muted/30 border border-border/40 px-4 font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                    value={syncForm.from}
-                    onChange={e => setSyncForm(p => ({ ...p, from: e.target.value }))}
-                  >
-                    <option value="dev">dev</option>
-                    <option value="staging">staging</option>
-                    <option value="prod">prod</option>
-                  </select>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Target Cluster</Label>
-                  <select 
-                    className="w-full h-12 rounded-xl bg-muted/30 border border-border/40 px-4 font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                    value={syncForm.to}
-                    onChange={e => setSyncForm(p => ({ ...p, to: e.target.value }))}
-                  >
-                    <option value="dev">dev</option>
-                    <option value="staging">staging</option>
-                    <option value="prod">prod</option>
-                  </select>
-                </div>
+            <form id="bulk-form" onSubmit={handleBulkImport} className="space-y-8">
+              <div className="space-y-3">
+                <Label htmlFor="bulk-text" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Environment Data (KEY=VALUE)</Label>
+                <Textarea id="bulk-text" placeholder="DB_URL=postgres://...&#10;API_KEY=sk_test_..." className="min-h-[300px] rounded-2xl bg-muted/30 border-border px-6 py-6 focus:bg-background font-mono text-base" value={bulkText} onChange={e => setBulkText(e.target.value)} required />
               </div>
-
-               <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-                   <ShieldCheck className="text-amber-500 size-6 shrink-0" />
-                   <p className="text-xs text-amber-500/80 font-medium font-mono leading-relaxed lowercase">
-                     Warning: This protocol will replicate all encrypted payloads from <span className="font-bold underline">{syncForm.from}</span> into <span className="font-bold underline">{syncForm.to}</span>. Existing keys in target will be updated.
-                   </p>
+               <div className="flex items-center justify-between p-6 rounded-2xl bg-muted/20 border border-border">
+                  <Label className="text-base font-bold">Apply "Show in UI" to all keys</Label>
+                  <Switch checked={bulkCanView} onCheckedChange={setBulkCanView} />
                </div>
             </form>
           </div>
-          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
-            <Button form="sync-form" type="submit" disabled={syncLoading} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
-              {syncLoading ? <Loader2 className="animate-spin" /> : `Promote Secrets to ${syncForm.to.toUpperCase()}`}
+          <DialogFooter className="p-12 pt-8 bg-muted/10 border-t border-border/10">
+            <Button form="bulk-form" type="submit" disabled={bulkSaving} className="w-full h-20 rounded-2xl text-2xl font-bold shadow-md">
+              {bulkSaving ? <Loader2 className="animate-spin" /> : `Import Variables`}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
-          <div className="p-10 pb-6">
-            <DialogHeader className="mb-8">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <Pencil size={32} />
+      <Dialog open={isSyncOpen} onOpenChange={setIsSyncOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 border-border overflow-hidden shadow-2xl bg-card">
+          <div className="p-12 pb-8">
+            <DialogHeader className="mb-10">
+              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm">
+                <ArrowRightLeft size={36} />
               </div>
-              <DialogTitle className="text-3xl font-bold tracking-tight">Modify Secret Protocol</DialogTitle>
-              <DialogDescription className="text-base text-muted-foreground">
-                Updating <span className="text-primary font-black font-mono">{(editingSecret as any)?.key}</span> in the <span className="uppercase font-bold">{env}</span> cluster.
+              <DialogTitle className="text-4xl font-bold tracking-tighter leading-tight">Sync Environments</DialogTitle>
+              <DialogDescription className="text-lg font-medium text-muted-foreground mt-2 italic">
+                Copy all shared variables from one environment to another.
               </DialogDescription>
             </DialogHeader>
-            
-            <form id="edit-form" onSubmit={handleEdit} className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Secure Variable Value</Label>
-                <Input
-                  type="password"
-                  placeholder="Enter new value..."
-                  className="h-14 rounded-2xl bg-muted/30 border-border/40 px-5 focus:bg-background transition-all font-mono"
-                  value={editingSecret?.value || ''}
-                  onChange={e => setEditingSecret((p: any) => ({ ...p, value: e.target.value }))}
-                  required
-                />
+            <form id="sync-form" onSubmit={handleSync} className="space-y-8">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Source</Label>
+                  <select className="w-full h-14 rounded-xl bg-muted/30 border border-border px-6 font-bold text-sm outline-none" value={syncForm.from} onChange={e => setSyncForm(p => ({ ...p, from: e.target.value }))}>
+                    <option value="dev">Development</option><option value="staging">Staging</option><option value="prod">Production</option>
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Target</Label>
+                  <select className="w-full h-14 rounded-xl bg-muted/30 border border-border px-6 font-bold text-sm outline-none" value={syncForm.to} onChange={e => setSyncForm(p => ({ ...p, to: e.target.value }))}>
+                    <option value="dev">Development</option><option value="staging">Staging</option><option value="prod">Production</option>
+                  </select>
+                </div>
               </div>
-              
-              <div className="flex items-center justify-between p-5 rounded-2xl bg-muted/20 border border-border/30">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-bold">Dashboard Viewing Protocol</Label>
-                    <p className="text-xs text-muted-foreground font-medium">Toggle visibility of this key in the nexus UI.</p>
-                  </div>
-                  <Switch 
-                    checked={editingSecret?.can_view}
-                    onCheckedChange={(val) => setEditingSecret((p: any) => ({ ...p, can_view: val }))}
-                  />
+               <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex gap-4">
+                   <ShieldAlert className="text-amber-500 size-6 shrink-0 mt-1" />
+                   <p className="text-xs text-amber-600 font-bold leading-relaxed uppercase tracking-tight italic">
+                     This will overwrite variables with the same name in the target environment.
+                   </p>
                </div>
             </form>
           </div>
-          
-          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
-            <Button form="edit-form" type="submit" disabled={saving} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
-              {saving ? <Loader2 className="animate-spin" /> : "Commit Modification"}
+          <DialogFooter className="p-12 pt-8 bg-muted/10 border-t border-border/10">
+            <Button form="sync-form" type="submit" disabled={syncLoading} className="w-full h-20 rounded-2xl text-2xl font-bold shadow-md">
+              {syncLoading ? <Loader2 className="animate-spin" /> : "Start Sync"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="sm:max-w-[480px] rounded-xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-5">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-sm">
+                <Settings2 size={20} />
+              </div>
+              <DialogTitle className="text-xl font-bold tracking-tight">Project Settings</DialogTitle>
+            </DialogHeader>
+            <form id="settings-form" onSubmit={handleUpdateSettings} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Project Name</Label>
+                <Input className="h-9 rounded-lg bg-muted/30 border-border px-4 font-bold text-sm" value={settingsForm.name} onChange={e => setSettingsForm({ ...settingsForm, name: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
+                <Input className="h-9 rounded-lg bg-muted/30 border-border px-4 text-sm" value={settingsForm.description} onChange={e => setSettingsForm({ ...settingsForm, description: e.target.value })} />
+              </div>
+              
+              <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2"><Activity size={12} /> Security Webhooks</h4>
+                 <Button type="button" variant="outline" className="w-full rounded-lg border-primary/20 bg-background text-primary font-bold h-9 text-xs" onClick={() => { setIsSettingsOpen(false); setIsWebhookOpen(true); }}>
+                    Configure Webhooks
+                 </Button>
+              </div>
+
+              <div className="p-5 rounded-xl bg-destructive/5 border border-destructive/20 shadow-inner">
+                  <h4 className="text-sm font-bold text-destructive flex items-center gap-2 mb-1"><XCircle size={14} /> Danger Zone</h4>
+                  <p className="text-[10px] text-destructive/70 mb-4 font-medium italic">Purge secrets and members.</p>
+                  <Button type="button" variant="destructive" className="w-full h-9 rounded-lg font-bold text-xs" onClick={handleDeleteProject}>Delete Project</Button>
+              </div>
+            </form>
+          </div>
+          <DialogFooter className="p-6 pt-4 bg-muted/5 border-t border-border/10">
+            <Button form="settings-form" type="submit" className="w-full h-10 rounded-lg text-sm font-bold shadow-sm">Update Settings</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isWebhookOpen} onOpenChange={setIsWebhookOpen}>
+        <DialogContent className="sm:max-w-[480px] rounded-xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-5">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-sm">
+                <ShieldAlert size={20} />
+              </div>
+              <DialogTitle className="text-xl font-bold tracking-tight">Security Webhooks</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-1">
+                Receive real-time alerts for secret access events.
+              </DialogDescription>
+            </DialogHeader>
+            <form id="webhook-form" onSubmit={handleAddWebhook} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="w-url" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Webhook URL</Label>
+                <Input id="w-url" placeholder="https://hooks.slack.com/..." className="h-9 rounded-lg bg-muted/30 border-border px-4 font-mono text-xs" value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} required />
+              </div>
+            </form>
+          </div>
+          <DialogFooter className="p-6 pt-4 bg-muted/5 border-t border-border/10">
+            <Button form="webhook-form" type="submit" disabled={savingWebhook} className="w-full h-10 rounded-lg text-sm font-bold shadow-sm">
+              {savingWebhook ? <Loader2 className="animate-spin size-4" /> : "Save Webhook"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent className="sm:max-w-[440px] rounded-xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-5">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-sm">
+                <PlusIcon size={20} />
+              </div>
+              <DialogTitle className="text-xl font-bold tracking-tight">Add Secret</DialogTitle>
+            </DialogHeader>
+            <form id="secret-form" onSubmit={handleCreate} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="s-key" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Variable Name</Label>
+                <Input id="s-key" className="h-9 rounded-lg bg-muted/30 border-border px-4 focus:bg-background font-mono font-bold text-sm uppercase" value={newSecret.key} onChange={e => setNewSecret(p => ({ ...p, key: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '_') }))} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-val" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Value</Label>
+                <Input id="s-val" type="password" className="h-9 rounded-lg bg-muted/30 border-border px-4 focus:bg-background font-mono text-sm" value={newSecret.value} onChange={e => setNewSecret(p => ({ ...p, value: e.target.value }))} required />
+              </div>
+              <div className="grid grid-cols-1 gap-2.5">
+                 <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border" onClick={() => setNewSecret(p => ({ ...p, can_view: !p.can_view }))}>
+                    <Label className="text-sm font-bold tracking-tight">Show in Browser</Label>
+                    <Switch checked={newSecret.can_view} onCheckedChange={(val) => setNewSecret(p => ({ ...p, can_view: val }))} />
+                 </div>
+                 <div className="flex items-center justify-between p-4 rounded-xl bg-amber-500/5 border border-amber-500/20" onClick={() => setNewSecret(p => ({ ...p, isPersonal: !p.isPersonal }))}>
+                    <Label className="text-sm font-bold tracking-tight text-amber-600">Personal Only</Label>
+                    <Switch checked={newSecret.isPersonal} onCheckedChange={(val) => setNewSecret(p => ({ ...p, isPersonal: val }))} />
+                 </div>
+              </div>
+            </form>
+          </div>
+          <DialogFooter className="p-6 pt-4 bg-muted/5 border-t border-border/10">
+            <Button form="secret-form" type="submit" disabled={saving} className="w-full h-10 rounded-lg text-sm font-bold shadow-sm">
+              {saving ? <Loader2 className="animate-spin size-4" /> : "Create Secret"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isClearanceOpen} onOpenChange={setIsClearanceOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
-          <div className="p-10 pb-6">
-            <DialogHeader className="mb-8">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <ShieldCheck size={32} />
+        <DialogContent className="sm:max-w-[440px] rounded-xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-sm">
+                <ShieldCheck size={20} />
               </div>
-              <DialogTitle className="text-3xl font-black tracking-tight">Security Clearance</DialogTitle>
-              <DialogDescription className="text-base text-muted-foreground">
-                Revoke or grant cluster access for <span className="text-primary font-bold">{clearanceMember?.name}</span>.
-              </DialogDescription>
+              <DialogTitle className="text-xl font-bold tracking-tight">Edit Access Matrix</DialogTitle>
             </DialogHeader>
-
-            <form id="clearance-form" onSubmit={handleUpdateClearance} className="space-y-6">
-              <div className="space-y-4">
+            <form id="clearance-form" onSubmit={handleUpdateClearance} className="space-y-5">
+              <div className="space-y-3">
                  {['dev', 'staging', 'prod'].map(cluster => (
-                  <div 
-                    key={cluster} 
-                    className={`flex items-center justify-between p-5 rounded-2xl border transition-all cursor-pointer ${
-                      clearanceEnvs.includes(cluster) ? 'bg-primary/5 border-primary/30 shadow-sm' : 'bg-muted/10 border-border/20 opacity-60'
-                    }`}
-                  >
+                  <div key={cluster} className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer group shadow-sm ${clearanceEnvs.includes(cluster) ? 'bg-primary/[0.03] border-primary/20' : 'bg-muted/5 border-border opacity-60 hover:opacity-100'}`} onClick={() => { if (clearanceEnvs.includes(cluster)) setClearanceEnvs(p => p.filter(e => e !== cluster)); else setClearanceEnvs(p => [...p, cluster]); }}>
                     <div className="flex items-center gap-4">
-                       <div className={`h-8 w-8 rounded-lg flex items-center justify-center font-black text-[10px] uppercase ${
-                         clearanceEnvs.includes(cluster) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                       }`}>
-                          {cluster.charAt(0)}
-                       </div>
-                       <div>
-                          <div className="font-bold text-sm uppercase tracking-wider">{cluster} Cluster</div>
-                          <div className="text-[10px] text-muted-foreground italic">Full cryptographic injection access</div>
-                       </div>
+                       <div className={`h-10 w-10 rounded-lg flex items-center justify-center font-bold text-[10px] uppercase transition-all ${clearanceEnvs.includes(cluster) ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground'}`}>{cluster.charAt(0)}</div>
+                       <div className="font-bold text-sm uppercase tracking-widest">{cluster} Environment</div>
                     </div>
-                    <Switch 
-                      checked={clearanceEnvs.includes(cluster)} 
-                      onCheckedChange={(val) => {
-                        if (val) setClearanceEnvs((p: string[]) => Array.from(new Set([...p, cluster])));
-                        else setClearanceEnvs((p: string[]) => p.filter(e => e !== cluster));
-                      }} 
-                    />
+                    <Switch checked={clearanceEnvs.includes(cluster)} onCheckedChange={() => {}} />
                   </div>
                 ))}
               </div>
-
-               <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-amber-500">
-                   <AlertCircle className="size-5 shrink-0" />
-                   <p className="text-[10px] font-bold leading-relaxed lowercase italic">
-                     Caution: Revoking access will immediately disconnect this user from the specified cluster secrets via both CLI and Dashboard.
-                   </p>
+               <div className="space-y-2">
+                  <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50 ml-1">Access Expiration (TTL)</Label>
+                  <Input type="date" className="h-9 rounded-lg bg-muted/10 border-border font-mono text-xs" value={clearanceTTL} onChange={e => setClearanceTTL(e.target.value)} />
                </div>
             </form>
           </div>
-          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
-            <Button form="clearance-form" type="submit" disabled={updatingClearance} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
-              {updatingClearance ? <Loader2 className="animate-spin" /> : "Authorize Clearance"}
-            </Button>
+          <DialogFooter className="p-6 pt-4 bg-muted/5 border-t border-border/10">
+            <Button form="clearance-form" type="submit" disabled={updatingClearance} className="w-full h-10 rounded-lg text-sm font-bold shadow-sm">{updatingClearance ? <Loader2 className="animate-spin size-4" /> : "Apply Changes"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-       <Dialog open={isWebhookOpen} onOpenChange={setIsWebhookOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-0 border-border/40 overflow-hidden shadow-2xl backdrop-blur-3xl bg-card/90">
-          <div className="p-10 pb-6">
-            <DialogHeader className="mb-8">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <ShieldCheck size={32} />
-              </div>
-              <DialogTitle className="text-3xl font-bold tracking-tight">Security Webhooks</DialogTitle>
-              <DialogDescription className="text-base">
-                Configure a Slack or Discord webhook to receive real-time alerts when **Restricted Secrets** are accessed.
-              </DialogDescription>
+
+      <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
+        <DialogContent className="sm:max-w-[650px] rounded-3xl p-0 border-border overflow-hidden shadow-2xl bg-card">
+          <div className="p-12">
+            <DialogHeader className="mb-10">
+              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm"><UserPlus size={36} /></div>
+              <DialogTitle className="text-4xl font-bold tracking-tighter leading-tight">Add Team Member</DialogTitle>
             </DialogHeader>
-            
-            <form id="webhook-form" onSubmit={handleAddWebhook} className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="w-url" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Webhook URL</Label>
-                <Input
-                  id="w-url"
-                  placeholder="https://hooks.slack.com/services/..."
-                  className="h-14 rounded-2xl bg-muted/30 border-border/40 px-5 focus:bg-background transition-all font-mono"
-                  value={webhookUrl}
-                  onChange={e => setWebhookUrl(e.target.value)}
-                  required
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Select User</Label>
+                <div className="rounded-2xl border border-border overflow-y-auto max-h-[350px] bg-muted/10 p-4 space-y-2">
+                  {orgMembers.filter(u => !projectMembers.find(m => m.id === u.id)).map(u => (
+                    <button key={u.id} onClick={() => { setClearanceMember(u); setClearanceEnvs(['dev']); }} className={`w-full flex items-center gap-4 p-5 rounded-xl border transition-all text-left group ${clearanceMember?.id === u.id ? 'bg-primary/10 border-primary/30' : 'border-transparent hover:bg-primary/[0.04]'}`}>
+                      <div className="h-10 w-10 rounded-xl bg-background border border-border text-muted-foreground flex items-center justify-center text-sm font-bold group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">{u.name.charAt(0)}</div>
+                      <div className="text-sm font-bold tracking-tight">{u.name}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
-              
-              <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                 <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-2">
-                    <AlertCircle size={12} /> Privacy Notice
-                 </p>
-                 <p className="text-[11px] text-amber-500/80 leading-relaxed">
-                    Synkrypt will only send metadata (Actor, Environment, Secret Key). The actual decrypted value is **never** sent via webhook.
-                 </p>
+              <div className="space-y-6">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Access Presets</Label>
+                <div className="space-y-3">
+                  {accessPresets.map(preset => (
+                    <button key={preset.id} onClick={() => { setClearancePreset(preset.name); setClearanceEnvs(preset.environments); }} className={`w-full p-5 rounded-xl border transition-all text-left flex flex-col gap-1 group ${clearancePreset === preset.name ? 'bg-blue-500/10 border-blue-500/30' : 'border-border hover:border-blue-500/30'}`}>
+                      <div className="font-bold text-xs uppercase tracking-widest">{preset.name}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </form>
+            </div>
+            {clearanceMember && (
+              <div className="mt-8 p-6 rounded-3xl bg-muted/20 border border-border animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col md:flex-row gap-8 justify-between">
+                  <div className="space-y-4">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Environments</Label>
+                    <div className="flex gap-2">
+                      {['dev', 'staging', 'prod'].map(cluster => (
+                        <button key={cluster} onClick={() => { if (clearanceEnvs.includes(cluster)) setClearanceEnvs(p => p.filter(e => e !== cluster)); else setClearanceEnvs(p => [...p, cluster]); }} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${clearanceEnvs.includes(cluster) ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground border border-border'}`}>{cluster}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Expiration Date (TTL)</Label>
+                    <div className="flex items-center gap-3"><Calendar size={18} className="text-muted-foreground" /><Input type="date" className="h-10 rounded-xl bg-muted/50 border-border font-mono text-xs" value={clearanceTTL} onChange={e => setClearanceTTL(e.target.value)} /></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          
-          <DialogFooter className="p-10 pt-6 bg-muted/10 border-t border-border/10">
-            <Button form="webhook-form" type="submit" disabled={savingWebhook} className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/30 transition-all hover-elevate">
-              {savingWebhook ? <Loader2 className="animate-spin" /> : "Deploy Security Webhook"}
-            </Button>
-          </DialogFooter>
+          <DialogFooter className="p-12 pt-0"><Button disabled={!clearanceMember || updatingClearance} onClick={() => handleAddProjectMember(clearanceMember.id, clearanceEnvs, clearancePreset, clearanceTTL)} className="w-full h-20 rounded-2xl text-2xl font-bold transition-all shadow-md">{updatingClearance ? <Loader2 className="animate-spin" /> : "Authorize Member"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

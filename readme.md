@@ -1,47 +1,47 @@
-# 🛡️ Synkrypt: The Localized Secrets Nexus
+# 🛡️ Synkrypt: Simplified Secrets Management
 
 [![Platform: Self-Hostable](https://img.shields.io/badge/Platform-Self--Hostable-blueviolet?style=flat-square)](https://github.com/abhilaksh/synkrypt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Typography: Professional](https://img.shields.io/badge/Typography-Bold--Professional-orange?style=flat-square)](https://synkrypt.com)
+[![Typography: Professional](https://img.shields.io/badge/Typography-Professional-orange?style=flat-square)](https://synkrypt.com)
 
-**Synkrypt** is a localized, high-security universal secrets manager designed for maximum cryptographic isolation and client-side runtime injection. It pivots away from centralized services to provide a self-hostable **Vortex Infrastructure** that you control entirely.
+**Synkrypt** is a localized, high-security secrets manager designed for project isolation and client-side runtime injection. It provides a professional, self-hostable alternative to centralized secret stores, giving you full control over your sensitive configuration.
 
 ---
 
 ## 💎 Core Philosophy
 
-Standard secrets management often involves vendor lock-in and complex permissions. Synkrypt simplifies the protocol:
+Professional secrets management should stay out of your way. Synkrypt focuses on clarity and security:
 
-- **Localized First**: Your secrets live on your node, following your security rules.
+- **Localized Control**: Your secrets live on your infrastructure, following your security rules.
 - **Zero-Knowledge Architecture**: Every project generates a unique cryptographic Master Key. The server never stores your raw secrets in plaintext.
-- **CLI-Native Workflow**: Inject secrets directly into child processes at runtime. No more unencrypted `.env` files lingering on developer machines.
+- **CLI-Native Workflow**: Inject secrets directly into child processes at runtime. No more unencrypted `.env` files on developer machines.
 
 ## 🚀 Key Features
 
-### 🔐 Vortex Infrastructure
+### 🔐 Project-Based Isolation
 
-Project-centric encryption isolation. A breach in one project container does not compromise the cryptographic integrity of others.
+Each project is a security boundary. A compromise in one project does not affect the cryptographic integrity of others.
 
-### 🌓 Premium Dashboard
+### 🌓 Professional Dashboard
 
-A professional, localized dashboard featuring a high-fidelity cream/white theme, refined typography, and a glassmorphism design system.
+A clean, high-performance interface for managing configuration and team access.
 
-- **Universal Breadcrumbs**: High-precision navigation across organizations, projects, and documentation.
-- **Forensic Audit Trail**: A persistent, vertical timeline of every cryptographic handshake and secret access.
-- **Security Webhooks**: Real-time Slack/Discord alerts for **Restricted Secret** access.
+- **Direct Navigation**: Access your projects and variables immediately after login.
+- **Audit Logs**: A persistent timeline of every secret access and configuration change.
+- **Security Alerts**: Real-time Slack/Discord notifications for sensitive resource access.
+- **Access Presets**: Standardized "Team Tags" (Senior Dev, PM, etc.) for one-click provisioning.
 
-### 🐚 CLI Nexus
+### 🐚 Developer CLI
 
-The primary interface for developers. Seamlessly transition from development to production clusters.
+The primary interface for engineering teams. Seamlessly transition from development to production.
 
-- `synkrypt login`: Secure administrative handshake.
-- `synkrypt run`: Execute any command with perfectly injected environment variables.
+- `synkrypt login`: Securely authenticate your local machine.
+- `synkrypt run`: Execute any command with injected environment variables.
+- `synkrypt pull`: Safely sync viewable variables to a local `.env` file.
 
-Switch between **Admin** and **Developer** roles with localized permissions for `dev`, `staging`, and `prod` environments.
+### ⚡ Sub-millisecond Performance
 
-### ⚡ Synkrypt High-Resolution Profiler
-
-Validated sub-millisecond injection overhead. The `test-app` includes a built-in profiler to measure the exact delta between CLI injection and process boot.
+Validated sub-millisecond injection overhead. Synkrypt ensures security never slows down your development cycle or production boot times.
 
 ---
 
@@ -52,18 +52,19 @@ Validated sub-millisecond injection overhead. The `test-app` includes a built-in
 - [Bun](https://bun.sh) (v1.0.0+)
 - PostgreSQL
 
-### 2. Infrastructure Setup
+### 2. Server Setup
 
-Clone the nexus and initialize the database.
+Clone the repository and initialize the database.
 
 ```bash
 git clone https://github.com/abhilaksh/synkrypt.git
 cd synkrypt
+bun install
 ```
 
-#### Server Configuration
+#### Configuration
 
-Configure the core node variables in `server/.env`:
+Set your core variables in `server/.env`:
 
 ```bash
 PORT=2809
@@ -72,86 +73,59 @@ SERVER_SECRET=<64_char_hex_string>
 JWT_SECRET=<64_char_hex_string>
 ```
 
-#### Start the Node
+#### Run Migration & Start
 
 ```bash
 cd server
-bun install
-bun run index.ts
+bun run src/db/migrate.ts
+bun run dev
 ```
 
-### 3. Dashboard Deployment
+### 3. Dashboard Access
 
 ```bash
-cd ../web
-bun install
-# Optional: VITE_SYNKRYPT_SERVER_URL=http://localhost:2809
-bun run dev --port 5173
+cd web
+bun run dev
 ```
 
-Accessible at `http://localhost:5173`.
-Dashboard talks to the server at `http://localhost:2809` by default.
+Accessible at `http://localhost:5173`. Create your admin account to get started.
 
 ---
 
-## 🐚 CLI Vortex Usage
+## 🐚 CLI Usage
 
-Authenticate your local terminal with the active node.
-
-### 3. CLI Integration
-
-Navigate to the `cli` directory and link it globally:
+### Installation
 
 ```bash
 cd cli
 bun link
 ```
 
-Now you can use the `synkrypt` command from anywhere!
-
-#### Login
+### Authentication
 
 ```bash
 synkrypt login
 ```
 
-#### Link a Project
-
-Navigate to your application folder and run:
+### Project Linking
 
 ```bash
 synkrypt use <project-key>
 ```
 
-#### Pull Secrets
+### Run with Secrets
 
 ```bash
-synkrypt pull -e dev
+synkrypt run --env dev -- bun run dev
 ```
-
-#### Run with Secrets
-
-```bash
-synkrypt run -e dev -- bun run start
-```
-
-# Deploy to production cluster
-
-synkrypt run --env prod -- bun run build
 
 ---
 
-## 🛡️ Security Handshake
+## 🛡️ Security Layers
 
-1. **Layer 1 (Server Secret)**: Protects the encryption keys stored in the database.
-2. **Layer 2 (Project Master Key)**: A unique 256-bit key per project.
+1. **Layer 1 (Server Secret)**: Protects project encryption keys in the database.
+2. **Layer 2 (Project Master Key)**: A unique 256-bit key generated per project.
 3. **Layer 3 (AES-256-GCM)**: Authenticated encryption for individual secret payloads.
-
----
-
-## 📜 Documentation
-
-Detailed guides on technical nexus protocols, node deployment, and the encryption handshake are available directly within the **Dashboard Docs** at `/docs`.
 
 ---
 

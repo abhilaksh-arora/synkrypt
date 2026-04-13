@@ -2,9 +2,10 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
-import organizationRoutes from './routes/organizationRoutes';
 import projectRoutes from './routes/projectRoutes';
-import auditRoutes from './routes/auditRoutes';
+import auditLogsRoutes from './routes/auditRoutes';
+import presetRoutes from './routes/accessPresetRoutes';
+import userAssetRoutes from './routes/userAssetRoutes';
 
 const app = express();
 
@@ -25,12 +26,13 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-app.get('/health', (_req, res) => res.json({ status: 'ok', version: '2.0.0' }));
+app.get('/health', (_req, res) => res.json({ status: 'ok', version: '3.5.0' }));
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
-app.use('/orgs', organizationRoutes);
-app.use('/projects', projectRoutes);   // standalone /projects/:id, /projects/by-key/:key
-app.use('/audit-logs', auditRoutes);
+app.use('/projects', projectRoutes);
+app.use('/audit-logs', auditLogsRoutes);
+app.use('/access-presets', presetRoutes);
+app.use('/user-assets', userAssetRoutes);
 
 export default app;

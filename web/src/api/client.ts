@@ -18,7 +18,6 @@ export async function customFetch<T = any>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  // Adjust path to remove /api prefix if it exists, to match current server routes
   const normalizedPath = path.startsWith("/api") ? path.slice(4) : path;
 
   const res = await fetch(`${BASE}${normalizedPath}`, {
@@ -54,27 +53,30 @@ export const api = {
   logout: () => request("POST", "/auth/logout"),
   me: () => request("GET", "/auth/me"),
 
-  // Users
+  // Users & Team Management
   listUsers: () => request("GET", "/users"),
   createUser: (body: any) => request("POST", "/users", body),
   deleteUser: (id: string) => request("DELETE", `/users/${id}`),
+  revokeAllAccess: (id: string) => request("POST", `/users/${id}/revoke`),
   changePassword: (id: string, body: any) =>
     request("PUT", `/users/${id}/password`, body),
 
-  // Orgs
-  listOrgs: () => request("GET", "/orgs"),
-  createOrg: (body: any) => request("POST", "/orgs", body),
-  getOrg: (id: string) => request("GET", `/orgs/${id}`),
-  deleteOrg: (id: string) => request("DELETE", `/orgs/${id}`),
-  addOrgMember: (orgId: string, body: any) =>
-    request("POST", `/orgs/${orgId}/members`, body),
-  removeOrgMember: (orgId: string, uid: string) =>
-    request("DELETE", `/orgs/${orgId}/members/${uid}`),
+  // Access Presets
+  listPresets: () => request("GET", "/access-presets"),
+  createPreset: (body: any) => request("POST", "/access-presets", body),
+  deletePreset: (id: string) => request("DELETE", `/access-presets/${id}`),
+
+  // User Assets (The Vault)
+  listMyAssets: () => request("GET", "/user-assets"),
+  getAsset: (id: string) => request("GET", `/user-assets/${id}`),
+  issueAsset: (body: any) => request("POST", "/user-assets", body),
+  revokeAsset: (id: string) => request("DELETE", `/user-assets/${id}`),
+  listUserAssets: (uid: string) => request("GET", `/user-assets/user/${uid}`),
 
   // Projects
-  listProjects: (orgId: string) => request("GET", `/orgs/${orgId}/projects`),
-  createProject: (orgId: string, body: any) =>
-    request("POST", `/orgs/${orgId}/projects`, body),
+  listProjects: () => request("GET", "/projects"),
+  createProject: (body: any) =>
+    request("POST", "/projects", body),
   getProject: (id: string) => request("GET", `/projects/${id}`),
   updateProject: (id: string, body: any) =>
     request("PUT", `/projects/${id}`, body),
@@ -84,18 +86,19 @@ export const api = {
   removeProjectMember: (pid: string, uid: string) =>
     request("DELETE", `/projects/${pid}/members/${uid}`),
 
-  // Secrets
+  // Secrets & Assets
   listSecrets: (pid: string, env: string) =>
     request("GET", `/projects/${pid}/secrets?env=${env}`),
   upsertSecret: (pid: string, body: any) =>
     request("POST", `/projects/${pid}/secrets`, body),
-  bulkUpsertSecrets: (pid: string, body: { environment: string; secrets: any[] }) =>
+  bulkUpsertSecrets: (pid: string, body: any) =>
     request("POST", `/projects/${pid}/secrets/bulk`, body),
   deleteSecret: (pid: string, sid: string) =>
     request("DELETE", `/projects/${pid}/secrets/${sid}`),
   
   // Audit Logs
   listAuditLogs: () => request("GET", "/audit-logs"),
+  getAuditLogs: (projectId: string) => request("GET", `/audit-logs/${projectId}/logs`),
 
   // Sync
   syncSecrets: (pid: string, body: { fromEnv: string; toEnv: string }) =>
@@ -103,6 +106,7 @@ export const api = {
 
   updateSecretVisibility: (projectId: string, secretId: string, canView: boolean) => 
     request("PATCH", `/projects/${projectId}/secrets/${secretId}/visibility`, { can_view: canView }),
-  getAuditLogs: (projectId: string) => request("GET", `/audit-logs/${projectId}/logs`),
+  
+  // Custom request
   request: (method: string, path: string, body?: any) => request(method, path, body),
 };

@@ -29,7 +29,7 @@ export async function runCommand(commandArgs: string[], options: { env: string }
   assertEnvironment(environment);
 
   if (commandArgs.length === 0) {
-    console.error("❌ No command provided");
+    console.error(" No command provided");
     process.exit(1);
   }
 
@@ -51,13 +51,13 @@ export async function runCommand(commandArgs: string[], options: { env: string }
     console.log(`🚀 Running in '${environment}': ${commandArgs.join(" ")}`);
     const command = commandArgs[0];
     if (!command) {
-      console.error("❌ No command provided");
+      console.error(" No command provided");
       process.exit(1);
     }
 
     const child = spawn(command, commandArgs.slice(1), { stdio: "inherit", env });
     child.once("exit", (code: number | null) => process.exit(code || 0));
   } catch (err: any) {
-    console.error(`❌ Failed to run command: ${err.message}`);
+    console.error(` Failed to run command: ${err.message}`);
   }
 }

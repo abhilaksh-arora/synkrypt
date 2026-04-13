@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  synkrypt-db:
+    image: postgres:15-alpine
+    container_name: synkrypt-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-synkrypt}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-synkrypt_pass}
+      POSTGRES_DB: ${DB_NAME:-synkrypt}
+    ports:
+      - "5432:5432"
+    volumes:
+      - synkrypt_data:/var/lib/postgresql/data
+
+  synkrypt-server:
+    build: ./server
+    container_name: synkrypt-server
+    restart: always
+    ports:
+      - "2809:2809"
+    environment:
+      PORT: 2809
+      DATABASE_URL: postgresql://${DB_USER:-synkrypt}:${DB_PASSWORD:-synkrypt_pass}@synkrypt-db:5432/${DB_NAME:-synkrypt}
+      SERVER_SECRET: ${SERVER_SECRET:-72af82c1234567890abcdef1234567890abcdef1234567890abcdef1234567890}
+      JWT_SECRET: ${JWT_SECRET:-9876543210abcdef9876543210abcdef9876543210abcdef9876543210abcdef}
+      CORS_ORIGIN: http://localhost:8080
+    depends_on:
+      - synkrypt-db
+
+  synkrypt-web:
+    build: ./web
+    container_name: synkrypt-web
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      VITE_SYNKRYPT_SERVER_URL: http://localhost:2809
+    depends_on:
+      - synkrypt-server
+
+volumes:
+  synkrypt_data:

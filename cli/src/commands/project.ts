@@ -58,7 +58,7 @@ export async function createProjectCommand(projectId: string, options: { org: st
   const encryptedProjectKey = encryptAsymmetric(identity.publicKey, projectKey);
 
   if (!options.org) {
-    console.error("❌ Missing organization. Use --org <organizationId>");
+    console.error(" Missing organization. Use --org <organizationId>");
     process.exit(1);
   }
 
@@ -73,9 +73,9 @@ export async function createProjectCommand(projectId: string, options: { org: st
       }),
     });
     setProjectConfig({ projectId, organizationId: options.org });
-    console.log(`✅ Project '${projectId}' created and linked.`);
+    console.log(` Project '${projectId}' created and linked.`);
   } catch (err: any) {
-    console.error(`❌ Failed to create project: ${err.message}`);
+    console.error(` Failed to create project: ${err.message}`);
   }
 }
 
@@ -86,7 +86,7 @@ export function linkProjectCommand(projectId: string, options: { org?: string })
   }
 
   setProjectConfig(config);
-  console.log(`✅ Linked to project '${projectId}'`);
+  console.log(` Linked to project '${projectId}'`);
 }
 
 export async function addMemberCommand(targetUserId: string, options: { role?: string; template?: string }) {
@@ -116,9 +116,9 @@ export async function addMemberCommand(targetUserId: string, options: { role?: s
       }),
     });
 
-    console.log(`✅ Added ${targetUserId} to project ${projectId}`);
+    console.log(` Added ${targetUserId} to project ${projectId}`);
   } catch (err: any) {
-    console.error(`❌ Failed to add member: ${err.message}`);
+    console.error(` Failed to add member: ${err.message}`);
   }
 }
 
@@ -128,9 +128,9 @@ export async function revokeMemberCommand(targetUserId: string) {
 
   try {
     await rotateProjectAndRevokeMember(projectId, targetUserId, privateKey);
-    console.log(`✅ Revoked ${targetUserId} from project ${projectId} with key rotation.`);
+    console.log(` Revoked ${targetUserId} from project ${projectId} with key rotation.`);
   } catch (err: any) {
-    console.error(`❌ Failed to revoke project member: ${err.message}`);
+    console.error(` Failed to revoke project member: ${err.message}`);
   }
 }
 
@@ -225,7 +225,7 @@ export async function linkGithubRepoCommand(options: { repo: string }) {
   const { projectId } = requireProjectConfig();
   const repo = options.repo?.trim();
   if (!repo || !repo.includes("/")) {
-    console.error("❌ Invalid repo format. Use --repo owner/name");
+    console.error(" Invalid repo format. Use --repo owner/name");
     process.exit(1);
   }
 
@@ -236,8 +236,8 @@ export async function linkGithubRepoCommand(options: { repo: string }) {
       method: "POST",
       body: JSON.stringify({ repoOwner, repoName }),
     });
-    console.log(`✅ Linked GitHub repo ${repoOwner}/${repoName} to project ${projectId}`);
+    console.log(` Linked GitHub repo ${repoOwner}/${repoName} to project ${projectId}`);
   } catch (err: any) {
-    console.error(`❌ Failed to link GitHub repo: ${err.message}`);
+    console.error(` Failed to link GitHub repo: ${err.message}`);
   }
 }

@@ -100,7 +100,7 @@ export async function setSecretCommand(
   assertEnvironment(environment);
 
   if (!key || !value) {
-    console.error("❌ Invalid format. Use KEY=VALUE");
+    console.error(" Invalid format. Use KEY=VALUE");
     process.exit(1);
   }
 
@@ -117,9 +117,9 @@ export async function setSecretCommand(
       body: JSON.stringify({ projectId, key, encryptedValue, environment, secretKeyGrants: grants }),
     });
 
-    console.log(`✅ Secret '${key}' stored in '${environment}'`);
+    console.log(` Secret '${key}' stored in '${environment}'`);
   } catch (err: any) {
-    console.error(`❌ Failed to store secret: ${err.message}`);
+    console.error(` Failed to store secret: ${err.message}`);
   }
 }
 
@@ -132,12 +132,12 @@ export async function setOrganizationSecretCommand(
   assertEnvironment(environment);
 
   if (!options.org) {
-    console.error("❌ Missing organization. Use --org <organizationId>");
+    console.error(" Missing organization. Use --org <organizationId>");
     process.exit(1);
   }
 
   if (!key || !value) {
-    console.error("❌ Invalid format. Use KEY=VALUE");
+    console.error(" Invalid format. Use KEY=VALUE");
     process.exit(1);
   }
 
@@ -178,9 +178,9 @@ export async function setOrganizationSecretCommand(
         secretKeyGrants: grants,
       }),
     });
-    console.log(`✅ Organization secret '${key}' stored in '${environment}' for ${options.org}`);
+    console.log(` Organization secret '${key}' stored in '${environment}' for ${options.org}`);
   } catch (err: any) {
-    console.error(`❌ Failed to store organization secret: ${err.message}`);
+    console.error(` Failed to store organization secret: ${err.message}`);
   }
 }
 
@@ -232,9 +232,9 @@ export async function updateSecretPermissionsCommand(
       }),
     });
 
-    console.log(`✅ Updated permissions for secret '${key}' in '${environment}'`);
+    console.log(` Updated permissions for secret '${key}' in '${environment}'`);
   } catch (err: any) {
-    console.error(`❌ Failed to update secret permissions: ${err.message}`);
+    console.error(` Failed to update secret permissions: ${err.message}`);
   }
 }
 
@@ -261,9 +261,9 @@ export async function pullSecretsCommand(options: { env: string }) {
     }
 
     fs.writeFileSync(".env", envContent);
-    console.log(`✅ .env file created for '${environment}'`);
+    console.log(` .env file created for '${environment}'`);
   } catch (err: any) {
-    console.error(`❌ Failed to pull secrets: ${err.message}`);
+    console.error(` Failed to pull secrets: ${err.message}`);
   }
 }
 
@@ -320,8 +320,8 @@ export async function migrateLegacySecretsCommand(options: { env?: string; all?:
       }
     }
 
-    console.log(`✅ Migrated ${migratedCount} legacy secret(s) to per-secret grant mode.`);
+    console.log(` Migrated ${migratedCount} legacy secret(s) to per-secret grant mode.`);
   } catch (err: any) {
-    console.error(`❌ Failed to migrate legacy secrets: ${err.message}`);
+    console.error(` Failed to migrate legacy secrets: ${err.message}`);
   }
 }

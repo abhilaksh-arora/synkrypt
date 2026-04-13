@@ -1,23 +1,47 @@
 import bcrypt from 'bcryptjs';
 import type { Request, Response } from 'express';
-import pool from '../db/db';
+import pool, { logAudit } from '../db/db';
 
-// GET /users — list all users (admin only)
+// GET /users — list all users with their project memberships (admin only)
 export const listUsers = async (req: any, res: Response) => {
   try {
-    const result = await pool.query(
+    const usersResult = await pool.query(
       'SELECT id, email, name, role, created_at FROM users ORDER BY created_at ASC'
     );
-    res.json({ users: result.rows });
+    
+    const membershipsResult = await pool.query(
+      `SELECT pm.user_id, p.id as project_id, p.name as project_name, pm.environments, pm.preset_name, pm.expires_at
+       FROM project_members pm
+       JOIN projects p ON p.id = pm.project_id`
+    );
+
+    const membershipsByUser: Record<string, any[]> = {};
+    for (const m of membershipsResult.rows) {
+      if (!membershipsByUser[m.user_id]) membershipsByUser[m.user_id] = [];
+      membershipsByUser[m.user_id].push({
+        id: m.project_id,
+        name: m.project_name,
+        environments: m.environments,
+        preset: m.preset_name,
+        expires_at: m.expires_at
+      });
+    }
+
+    const users = usersResult.rows.map(u => ({
+      ...u,
+      projects: membershipsByUser[u.id] || []
+    }));
+
+    res.json({ users });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
 
-// POST /users — admin creates (invites) a developer account
+// POST /users — admin creates (invites) a user account
 export const createUser = async (req: any, res: Response) => {
-  const { email, name, password } = req.body;
+  const { email, name, password, role } = req.body;
   if (!email || !name || !password) {
     return res.status(400).json({ error: 'email, name, and password are required.' });
   }
@@ -26,9 +50,9 @@ export const createUser = async (req: any, res: Response) => {
     const password_hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
       `INSERT INTO users (email, name, password_hash, role)
-       VALUES ($1, $2, $3, 'developer')
+       VALUES ($1, $2, $3, $4)
        RETURNING id, email, name, role, created_at`,
-      [email, name, password_hash]
+      [email, name, password_hash, role || 'developer']
     );
     res.status(201).json({ user: result.rows[0] });
   } catch (err: any) {
@@ -38,14 +62,28 @@ export const createUser = async (req: any, res: Response) => {
   }
 };
 
-// DELETE /users/:id — admin removes a user
+// DELETE /users/:id — global wipe (Deletes user + memberships)
 export const deleteUser = async (req: any, res: Response) => {
   const { id } = req.params;
   if (id === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself.' });
 
   try {
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    logAudit(req.user.id, null, 'user_delete', { targetUserId: id });
     res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
+// POST /users/:id/revoke — One-click Revoke All Access (Keeps user identity)
+export const revokeAllAccess = async (req: any, res: Response) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM project_members WHERE user_id = $1 RETURNING *', [id]);
+    logAudit(req.user.id, null, 'user_global_revoke', { targetUserId: id, revokedCount: result.rowCount });
+    res.json({ success: true, count: result.rowCount });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error.' });

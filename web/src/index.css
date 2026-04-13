@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -67,7 +67,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* LIGHT MODE - Warm neutral minimal premium style */
+/* LIGHT MODE (Waitmate) - Warm indie-hacker premium palette */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -76,53 +76,53 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .06);
 
-  --background: 40 20% 99%;
-  --foreground: 20 10% 12%;
-  
-  --border: 20 10% 90%;
-  
-  --card: 0 0% 100%;
-  --card-foreground: 20 10% 12%;
-  --card-border: 20 10% 92%;
-  
-  --sidebar: 40 20% 97%;
-  --sidebar-foreground: 20 10% 30%;
-  --sidebar-border: 20 10% 88%;
-  --sidebar-primary: 24 95% 53%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 40 15% 92%;
-  --sidebar-accent-foreground: 20 10% 12%;
-  --sidebar-ring: 24 95% 53%;
-  
-  --popover: 0 0% 100%;
-  --popover-foreground: 20 10% 12%;
-  --popover-border: 20 10% 90%;
-  
-  --primary: 24 95% 53%;
-  --primary-foreground: 0 0% 100%;
-  
-  --secondary: 40 15% 94%;
-  --secondary-foreground: 20 10% 20%;
-  
-  --muted: 40 15% 94%;
-  --muted-foreground: 20 5% 45%;
-  
-  --accent: 40 15% 94%;
-  --accent-foreground: 20 10% 12%;
+  --background: 40 20% 89%; /* #ECE9E2 */
+  --foreground: 0 0% 4%;    /* #0B0B0B */
+
+  --card: 40 18% 95%;       /* #F5F3EE */
+  --card-foreground: 0 0% 4%;
+  --card-border: 40 18% 87%; /* aligns with border */
+
+  --popover: 40 18% 95%;
+  --popover-foreground: 0 0% 4%;
+  --popover-border: 40 18% 87%;
+
+  --primary: 25 73% 53%;    /* #E07A2F */
+  --primary-foreground: 40 20% 98%;
+
+  --secondary: 40 15% 90%;
+  --secondary-foreground: 0 0% 4%;
+
+  --muted: 40 15% 90%;
+  --muted-foreground: 0 0% 42%; /* #6B6B6B */
+
+  --accent: 25 73% 53%;
+  --accent-foreground: 40 20% 98%;
   
   --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
+  --destructive-foreground: 0 0% 98%;
   
-  --input: 20 10% 88%;
-  --ring: 24 95% 53%;
+  --border: 40 18% 87%;     /* #E5E1D8 */
+  --input: 40 18% 87%;
+  --ring: 25 73% 53%;
+
+  /* Synkrypt-only tokens (derived to match Waitmate look) */
+  --sidebar: 40 18% 95%;
+  --sidebar-foreground: 0 0% 20%;
+  --sidebar-border: 40 18% 87%;
+  --sidebar-primary: 25 73% 53%;
+  --sidebar-primary-foreground: 40 20% 98%;
+  --sidebar-accent: 40 15% 90%;
+  --sidebar-accent-foreground: 0 0% 4%;
+  --sidebar-ring: 25 73% 53%;
   
-  --chart-1: 24 95% 53%;
+  --chart-1: 25 73% 53%;
   --chart-2: 180 70% 40%;
   --chart-3: 340 70% 50%;
   --chart-4: 280 65% 60%;
   --chart-5: 45 90% 50%;
 
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --shadow-2xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.02);
   --shadow-xs: 0px 1px 3px 0px rgba(0, 0, 0, 0.04), 0px 1px 2px -1px rgba(0, 0, 0, 0.04);
   --shadow-sm: 0px 2px 4px 0px rgba(0, 0, 0, 0.04), 0px 1px 2px -1px rgba(0, 0, 0, 0.04);
@@ -217,11 +217,31 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-mono font-medium tracking-tight;
   }
 }
 
 @layer utilities {
+  .glass-panel {
+    @apply bg-card/80 backdrop-blur-md border-[0.5px] border-border shadow-sm;
+  }
+
+  .minimal-card {
+    @apply bg-card border-[0.5px] border-border rounded-xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)];
+  }
+
+  .dev-input {
+    @apply w-full bg-background border-[0.5px] border-border rounded-lg px-3 py-2 text-sm font-sans focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground;
+  }
+
+  .dev-button {
+    @apply inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+  }
+
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
   }

@@ -337,45 +337,47 @@ export default function DocsPage() {
         </div>
       </header>
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_240px]">
-        {/* Main Content (Scrollable) */}
-        <div className="max-w-5xl space-y-8">
+      <div className="grid gap-12 xl:grid-cols-[260px_1fr]">
+        {/* Left Sidebar (Sticky Navigation) */}
+        <aside className="hidden xl:block">
+          <div className="sticky top-[72px] space-y-8 rounded-2xl border border-border bg-card/50 p-6 shadow-sm backdrop-blur-sm">
+            <div>
+              <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 px-1">Documentation</p>
+              <div className="space-y-8">
+                {groups.map((group) => (
+                  <div key={group}>
+                    <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-primary/60 border-b border-primary/10 pb-1.5 ml-1">{group}</p>
+                    <div className="flex flex-col gap-1">
+                      {sections
+                        .filter((section) => section.group === group)
+                        .map((section) => (
+                          <a
+                            key={section.id}
+                            href={`#${section.id}`}
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground transition-all hover:bg-background hover:text-primary border border-transparent hover:border-border group"
+                          >
+                            <section.icon className="h-3.5 w-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
+                            <span>{section.label}</span>
+                          </a>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Right Content (Scrolls) */}
+        <div className="max-w-4xl space-y-12">
           {sections.map((section) => (
-            <section key={section.id} id={section.id} className="scroll-mt-28">
+            <section key={section.id} id={section.id} className="scroll-mt-20">
               <DocCard icon={section.icon} title={section.title} description={section.description}>
                 {section.body}
               </DocCard>
             </section>
           ))}
         </div>
-
-        {/* Right Sidebar (Sticky) */}
-        <aside className="hidden xl:block">
-          <div className="sticky top-24 space-y-6 p-5 rounded-xl border border-border bg-muted/5">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40">Navigation</p>
-            <div className="space-y-6">
-              {groups.map((group) => (
-                <div key={group}>
-                  <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-primary/60">{group}</p>
-                  <div className="space-y-0.5">
-                    {sections
-                      .filter((section) => section.group === group)
-                      .map((section) => (
-                        <a
-                          key={section.id}
-                          href={`#${section.id}`}
-                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-muted-foreground transition-all hover:bg-background hover:text-primary border border-transparent hover:border-border"
-                        >
-                          <section.icon className="h-3 w-3 shrink-0" />
-                          <span>{section.label}</span>
-                        </a>
-                      ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
   );

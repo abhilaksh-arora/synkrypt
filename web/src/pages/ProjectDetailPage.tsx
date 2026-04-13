@@ -721,30 +721,30 @@ export default function ProjectDetailPage() {
       {/* Advanced Feature Dialogs */}
       
       <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
-        <DialogContent className="sm:max-w-[650px] rounded-3xl p-0 border-border overflow-hidden shadow-2xl bg-card">
-          <div className="p-12 pb-8">
+        <DialogContent className="sm:max-w-[650px] rounded-2xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-8 pb-6">
             <DialogHeader className="mb-8">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6 shadow-sm">
                 <FileUp size={36} />
               </div>
-              <DialogTitle className="text-4xl font-bold tracking-tighter leading-tight">Bulk Import</DialogTitle>
-              <DialogDescription className="text-lg font-medium text-muted-foreground mt-2 italic">
+              <DialogTitle className="text-2xl font-bold tracking-tight">Bulk Import</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-2">
                 Paste an entire <span className="font-mono text-xs font-bold bg-muted/80 px-2 py-1 rounded">.env</span> file into the <span className="text-primary font-bold uppercase">{env}</span> environment.
               </DialogDescription>
             </DialogHeader>
-            <form id="bulk-form" onSubmit={handleBulkImport} className="space-y-8">
+            <form id="bulk-form" onSubmit={handleBulkImport} className="space-y-6">
               <div className="space-y-3">
                 <Label htmlFor="bulk-text" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Environment Data (KEY=VALUE)</Label>
-                <Textarea id="bulk-text" placeholder="DB_URL=postgres://...&#10;API_KEY=sk_test_..." className="min-h-[300px] rounded-2xl bg-muted/30 border-border px-6 py-6 focus:bg-background font-mono text-base" value={bulkText} onChange={e => setBulkText(e.target.value)} required />
+                <Textarea id="bulk-text" placeholder="DB_URL=postgres://...&#10;API_KEY=sk_test_..." className="min-h-[260px] rounded-lg bg-background border-border px-4 py-4 focus:bg-background font-mono text-sm" value={bulkText} onChange={e => setBulkText(e.target.value)} required />
               </div>
-               <div className="flex items-center justify-between p-6 rounded-2xl bg-muted/20 border border-border">
-                  <Label className="text-base font-bold">Apply "Show in UI" to all keys</Label>
+               <div className="flex items-center justify-between p-4 rounded-xl bg-muted/10 border border-border">
+                  <Label className="text-sm font-bold">Apply "Show in UI" to all keys</Label>
                   <Switch checked={bulkCanView} onCheckedChange={setBulkCanView} />
                </div>
             </form>
           </div>
-          <DialogFooter className="p-12 pt-8 bg-muted/10 border-t border-border/10">
-            <Button form="bulk-form" type="submit" disabled={bulkSaving} className="w-full h-20 rounded-2xl text-2xl font-bold shadow-md">
+          <DialogFooter className="p-8 pt-6 bg-muted/5 border-t border-border/10">
+            <Button form="bulk-form" type="submit" disabled={bulkSaving} className="w-full h-12 rounded-lg text-base font-bold shadow-sm">
               {bulkSaving ? <Loader2 className="animate-spin" /> : `Import Variables`}
             </Button>
           </DialogFooter>
@@ -752,33 +752,33 @@ export default function ProjectDetailPage() {
       </Dialog>
 
       <Dialog open={isSyncOpen} onOpenChange={setIsSyncOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 border-border overflow-hidden shadow-2xl bg-card">
-          <div className="p-12 pb-8">
+        <DialogContent className="sm:max-w-[500px] rounded-2xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-8 pb-6">
             <DialogHeader className="mb-10">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6 shadow-sm">
                 <ArrowRightLeft size={36} />
               </div>
-              <DialogTitle className="text-4xl font-bold tracking-tighter leading-tight">Sync Environments</DialogTitle>
-              <DialogDescription className="text-lg font-medium text-muted-foreground mt-2 italic">
+              <DialogTitle className="text-2xl font-bold tracking-tight">Sync Environments</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-2">
                 Copy all shared variables from one environment to another.
               </DialogDescription>
             </DialogHeader>
-            <form id="sync-form" onSubmit={handleSync} className="space-y-8">
-              <div className="grid grid-cols-2 gap-6">
+            <form id="sync-form" onSubmit={handleSync} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Source</Label>
-                  <select className="w-full h-14 rounded-xl bg-muted/30 border border-border px-6 font-bold text-sm outline-none" value={syncForm.from} onChange={e => setSyncForm(p => ({ ...p, from: e.target.value }))}>
+                  <select className="w-full h-11 rounded-lg bg-background border border-border px-4 font-bold text-sm outline-none" value={syncForm.from} onChange={e => setSyncForm(p => ({ ...p, from: e.target.value }))}>
                     <option value="dev">Development</option><option value="staging">Staging</option><option value="prod">Production</option>
                   </select>
                 </div>
                 <div className="space-y-3">
                   <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Target</Label>
-                  <select className="w-full h-14 rounded-xl bg-muted/30 border border-border px-6 font-bold text-sm outline-none" value={syncForm.to} onChange={e => setSyncForm(p => ({ ...p, to: e.target.value }))}>
+                  <select className="w-full h-11 rounded-lg bg-background border border-border px-4 font-bold text-sm outline-none" value={syncForm.to} onChange={e => setSyncForm(p => ({ ...p, to: e.target.value }))}>
                     <option value="dev">Development</option><option value="staging">Staging</option><option value="prod">Production</option>
                   </select>
                 </div>
               </div>
-               <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex gap-4">
+               <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 flex gap-4">
                    <ShieldAlert className="text-amber-500 size-6 shrink-0 mt-1" />
                    <p className="text-xs text-amber-600 font-bold leading-relaxed uppercase tracking-tight italic">
                      This will overwrite variables with the same name in the target environment.
@@ -786,8 +786,8 @@ export default function ProjectDetailPage() {
                </div>
             </form>
           </div>
-          <DialogFooter className="p-12 pt-8 bg-muted/10 border-t border-border/10">
-            <Button form="sync-form" type="submit" disabled={syncLoading} className="w-full h-20 rounded-2xl text-2xl font-bold shadow-md">
+          <DialogFooter className="p-8 pt-6 bg-muted/5 border-t border-border/10">
+            <Button form="sync-form" type="submit" disabled={syncLoading} className="w-full h-12 rounded-lg text-base font-bold shadow-sm">
               {syncLoading ? <Loader2 className="animate-spin" /> : "Start Sync"}
             </Button>
           </DialogFooter>
@@ -932,16 +932,16 @@ export default function ProjectDetailPage() {
       </Dialog>
 
       <Dialog open={isAddMemberOpen} onOpenChange={setIsAddMemberOpen}>
-        <DialogContent className="sm:max-w-[650px] rounded-3xl p-0 border-border overflow-hidden shadow-2xl bg-card">
-          <div className="p-12">
+        <DialogContent className="sm:max-w-[650px] rounded-2xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-8">
             <DialogHeader className="mb-10">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm"><UserPlus size={36} /></div>
-              <DialogTitle className="text-4xl font-bold tracking-tighter leading-tight">Add Team Member</DialogTitle>
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6 shadow-sm"><UserPlus size={30} /></div>
+              <DialogTitle className="text-2xl font-bold tracking-tight">Add Team Member</DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Select User</Label>
-                <div className="rounded-2xl border border-border overflow-y-auto max-h-[350px] bg-muted/10 p-4 space-y-2">
+                <div className="rounded-xl border border-border overflow-y-auto max-h-[350px] bg-muted/5 p-3 space-y-2">
                   {orgMembers.filter(u => !projectMembers.find(m => m.id === u.id)).map(u => (
                     <button key={u.id} onClick={() => { setClearanceMember(u); setClearanceEnvs(['dev']); }} className={`w-full flex items-center gap-4 p-5 rounded-xl border transition-all text-left group ${clearanceMember?.id === u.id ? 'bg-primary/10 border-primary/30' : 'border-transparent hover:bg-primary/[0.04]'}`}>
                       <div className="h-10 w-10 rounded-xl bg-background border border-border text-muted-foreground flex items-center justify-center text-sm font-bold group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">{u.name.charAt(0)}</div>
@@ -980,7 +980,15 @@ export default function ProjectDetailPage() {
               </div>
             )}
           </div>
-          <DialogFooter className="p-12 pt-0"><Button disabled={!clearanceMember || updatingClearance} onClick={() => handleAddProjectMember(clearanceMember.id, clearanceEnvs, clearancePreset, clearanceTTL)} className="w-full h-20 rounded-2xl text-2xl font-bold transition-all shadow-md">{updatingClearance ? <Loader2 className="animate-spin" /> : "Authorize Member"}</Button></DialogFooter>
+          <DialogFooter className="p-8 pt-0">
+            <Button
+              disabled={!clearanceMember || updatingClearance}
+              onClick={() => handleAddProjectMember(clearanceMember.id, clearanceEnvs, clearancePreset, clearanceTTL)}
+              className="w-full h-12 rounded-lg text-base font-bold transition-all shadow-sm"
+            >
+              {updatingClearance ? <Loader2 className="animate-spin" /> : "Authorize Member"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

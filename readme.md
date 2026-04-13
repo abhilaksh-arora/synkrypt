@@ -27,9 +27,10 @@ Each project is a security boundary. A compromise in one project does not affect
 A clean, high-performance interface for managing configuration and team access.
 
 - **Direct Navigation**: Access your projects and variables immediately after login.
-- **Audit Logs**: A persistent timeline of every secret access and configuration change.
-- **Security Alerts**: Real-time Slack/Discord notifications for sensitive resource access.
-- **Access Presets**: Standardized "Team Tags" (Senior Dev, PM, etc.) for one-click provisioning.
+- **Interactive Audit Logs**: A high-fidelity timeline of every secret access and configuration change.
+- **Security Alerts**: Real-time notifications for sensitive resource access and permission shifts.
+- **Access Presets**: Standardized "Team Tags" (Senior Dev, PM, etc.) for rapid, one-click provisioning.
+- **Developer Aesthetics**: Built with professional typography (**Inter**) and high-contrast monospace (**JetBrains Mono**) for a premium developer experience.
 
 ### 🐚 Developer CLI
 
@@ -112,6 +113,9 @@ synkrypt login
 ```bash
 synkrypt use <project-key>
 ```
+
+> [!TIP]
+> **Team Collaboration**: Synkrypt now supports checking the `.synkrypt/config.json` file into version control. This allows your team to sync project links automatically—anyone who clones the repo can immediately run `synkrypt run` without manual setup.
 
 ### Run with Secrets
 

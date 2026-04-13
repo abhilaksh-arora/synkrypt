@@ -72,17 +72,19 @@ export default function SettingsPage() {
           {menuItems.map(item => (
             <button 
               key={item.id}
-              className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-300 group ${item.active ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted/50 text-muted-foreground'}`}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group ${
+                item.active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <item.icon size={20} className={item.active ? 'opacity-100' : 'opacity-50 group-hover:opacity-100'} />
-                <span className="font-bold text-sm">{item.label}</span>
+                <item.icon size={16} className={item.active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'} />
+                <span>{item.label}</span>
               </div>
               <ChevronRight size={14} className={`transition-transform duration-300 ${item.active ? 'rotate-0' : 'group-hover:translate-x-1'}`} />
             </button>
           ))}
           
-          <div className="mt-12 p-6 rounded-[2rem] bg-muted/20 border border-border/20">
+          <div className="mt-8 p-5 rounded-2xl bg-muted/10 border border-border/30">
              <div className="flex items-center gap-2 mb-3">
                <Fingerprint className="size-5 text-primary opacity-50" />
                <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Session Trust</span>
@@ -96,13 +98,13 @@ export default function SettingsPage() {
 
         {/* Main Content Area */}
         <div className="space-y-8">
-          <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-border/40 shadow-2xl overflow-hidden relative">
+          <Card className="rounded-2xl border-border overflow-hidden relative shadow-sm">
             <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
               <Lock size={120} />
             </div>
             
-            <CardHeader className="p-10 pb-4">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+            <CardHeader className="p-8 pb-3">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5">
                 <Lock size={28} />
               </div>
               <CardTitle className="text-2xl font-bold tracking-tight">Credential Rotation</CardTitle>
@@ -111,7 +113,7 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="p-10 pt-4">
+            <CardContent className="p-8 pt-3">
               <form id="password-form" onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">
@@ -120,7 +122,7 @@ export default function SettingsPage() {
                       id="current"
                       type="password"
                       placeholder="••••••••••••"
-                      className="h-14 rounded-2xl bg-muted/30 border-border/40 px-5 focus:bg-background transition-all font-mono"
+                      className="h-12 rounded-lg bg-background border-border px-4 focus:bg-background transition-all font-mono"
                       value={currentPassword}
                       onChange={e => setCurrentPassword(e.target.value)}
                       required

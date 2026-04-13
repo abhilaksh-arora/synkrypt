@@ -66,7 +66,7 @@ export default function LoginPage() {
         className="w-full max-w-lg z-10"
       >
         <div className="flex flex-col items-center mb-10 space-y-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-2xl shadow-primary/40 text-primary-foreground transform active:scale-95 transition-transform">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm text-primary-foreground transform active:scale-95 transition-transform">
             <LockKeyhole className="h-6 w-6" />
           </div>
           <div className="text-center">
@@ -75,7 +75,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <Card className="rounded-3xl p-2 shadow-2xl border-border/40 bg-card/60 backdrop-blur-3xl overflow-hidden relative group">
+        <Card className="rounded-2xl p-2 shadow-xl border-border bg-card overflow-hidden relative group">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
           
           <CardHeader className="space-y-2 pb-8 pt-8">
@@ -95,7 +95,7 @@ export default function LoginPage() {
                   <Input
                     id="name"
                     placeholder="Major Tom"
-                    className="h-12 rounded-2xl bg-muted/30 border-border/40 px-4 focus:bg-background transition-all"
+                    className="h-12 rounded-lg bg-background border-border px-4 focus:bg-background transition-all"
                     value={form.name}
                     onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                     required
@@ -108,7 +108,7 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="tom@synkrypt.io"
-                  className="h-12 rounded-2xl bg-muted/30 border-border/40 px-4 focus:bg-background transition-all font-mono"
+                  className="h-12 rounded-lg bg-background border-border px-4 focus:bg-background transition-all font-mono"
                   value={form.email}
                   onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                   required
@@ -122,7 +122,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   placeholder="••••••••••••"
-                  className="h-12 rounded-2xl bg-muted/30 border-border/40 px-4 focus:bg-background transition-all font-mono"
+                  className="h-12 rounded-lg bg-background border-border px-4 focus:bg-background transition-all font-mono"
                   value={form.password}
                   onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                   required
@@ -143,7 +143,7 @@ export default function LoginPage() {
             <Button 
               form="auth-form" 
               type="submit" 
-              className="w-full h-12 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 bg-primary hover:opacity-90 active:scale-[0.98] transition-all group" 
+              className="w-full h-12 rounded-lg text-base font-bold shadow-sm bg-primary hover:opacity-90 active:scale-[0.98] transition-all group" 
               disabled={loading}
             >
               {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-foreground" /> : (

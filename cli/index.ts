@@ -38,15 +38,13 @@ program
 
     try {
       // Login ignores normal session fetching, so we intercept the Set-Cookie token
-      const BASE_URL = process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
-      const res = await fetch(
-        `${BASE_URL}/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        },
-      );
+      const BASE_URL =
+        process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
+      const res = await fetch(`${BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
       if (!res.ok) throw new Error(await res.text());
 
       const cookie = res.headers.get("set-cookie");
@@ -68,15 +66,6 @@ program
       const data = (await api.getProjectByKey(projectKey)) as any;
       ensureDirs();
       setProjectConfig({ projectKey });
-
-      // Add to .gitignore if it exists
-      if (fs.existsSync(".gitignore")) {
-        const gitignore = fs.readFileSync(".gitignore", "utf8");
-        if (!gitignore.includes(".synkrypt")) {
-          fs.appendFileSync(".gitignore", "\n.synkrypt\n");
-          console.log("🔒 Added .synkrypt to .gitignore");
-        }
-      }
 
       console.log(` Project linked: ${data.project.name}`);
       console.log(`📂 Configuration saved to ./.synkrypt/config.json`);
@@ -177,10 +166,10 @@ program
       const mask = (data: Buffer) => {
         let str = data.toString();
         for (const val of restrictedValues) {
-          if (!val || val.length < 3) continue; 
-          const escaped = val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const re = new RegExp(escaped, 'g');
-          str = str.replace(re, '[SYNKRYPT_RESTRICTED]');
+          if (!val || val.length < 3) continue;
+          const escaped = val.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const re = new RegExp(escaped, "g");
+          str = str.replace(re, "[SYNKRYPT_RESTRICTED]");
         }
         return str;
       };

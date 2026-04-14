@@ -18,9 +18,26 @@ Professional secrets management should stay out of your way. Synkrypt focuses on
 
 ## Key Features
 
-### Project-Based Isolation
+### Project-Based Isolation & Air-Gapped Capable
 
-Each project is a security boundary. A compromise in one project does not affect the cryptographic integrity of others.
+Each project acts as an isolated cryptographic boundary. A compromise in one project does not affect the cryptographic integrity of others. Furthermore, Synkrypt operates cleanly inside Private VPCs and Air-Gapped networks. It does not communicate with external analytics or telemetry servers.
+
+### Security Architecture
+
+Synkrypt does not use simple symmetric encryption. It relies on a multi-tiered cryptographic derivation pipeline combining global root keys with strict project-level isolation:
+
+1. **Layer 1: Server Root Key**: A master 64-character hex key generated at setup via HKDF. This never rests in the database and must be provided via the backend environment.
+2. **Layer 2: Project Master Key (PMK)**: A unique 256-bit AES key generated whenever a new project is created.
+3. **Layer 3: AES-256-GCM AEAD**: Each individual secret is encrypted using Advanced Encryption Standard in Galois/Counter Mode, ensuring both confidentiality and data authenticity.
+4. **Layer 4: Personal Vault RSA**: Developer-specific files are hybrid-encrypted using unique client-side RSA/ECDH keypairs.
+
+### Team Governance & RBAC
+
+Provision access, assign roles, and handle offboarding with professional-grade governance tools.
+
+- **Role Based Access Matrix**: Three primary classifications. Admins have absolute control, Developers have read/pull access scoped to specific environments, and Machines (Service Tokens) are locked to distinct infrastructure targets.
+- **Temporary TTL Access**: Set expiration dates (Time-To-Live). The moment the TTL hits zero, the user's session terminates and all their local ciphertexts are cryptographically invalidated by the server.
+- **Global Revoke Kill-switch**: Instantly remove a user from all projects and clusters. Active WebSockets are disconnected, and tokens are scrubbed instantly.
 
 ### Professional Dashboard
 
@@ -37,8 +54,9 @@ A clean, high-performance interface for managing configuration and team access.
 The primary interface for engineering teams. Seamlessly transition from development to production.
 
 - `synkrypt login`: Securely authenticate your local machine.
-- `synkrypt run`: Execute any command with injected environment variables.
-- `synkrypt pull`: Safely sync viewable variables to a local `.env` file.
+- `synkrypt use <project-key>`: Link a project repository.
+- `synkrypt run --env dev -- <command>`: Inject variables into process memory (e.g., `synkrypt run -- bun run dev` or `synkrypt run -- docker-compose up`).
+- `synkrypt pull`: Safely sync viewable variables to a local `.env` file (for legacy stacks).
 - `synkrypt push`: Bulk upload local variables to a project environment.
 
 ### Sub-millisecond Performance

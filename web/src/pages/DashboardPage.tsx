@@ -55,24 +55,26 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="max-w-3xl">
-          <div className="flex items-center gap-2 mb-3">
-             <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] uppercase">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div className="max-w-3xl space-y-1.5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 mb-2">
+             <div className="h-5 w-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px] uppercase">
                 {user?.name.charAt(0)}
              </div>
-             <h2 className="text-sm font-semibold text-primary/60 tracking-tight">Welcome back, {user?.name}</h2>
+             <span className="text-xs font-bold uppercase tracking-widest text-primary/80">Welcome back, {user?.name}</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
             Projects
           </h1>
-          <p className="text-muted-foreground text-base leading-relaxed max-w-xl italic">
+          <p className="text-muted-foreground text-sm lg:text-base leading-relaxed max-w-xl italic pt-1">
             Securely manage environment variables and team access.
           </p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="h-9 rounded-lg px-4 text-sm font-bold shadow-md hover:translate-y-[-1px] transition-all group">
-          <PlusIcon className="mr-1.5 size-4 group-hover:rotate-90 transition-transform" /> Create Project
-        </Button>
+        <div className="pt-2">
+           <Button onClick={() => setIsCreateOpen(true)} className="h-10 rounded-xl px-5 text-sm font-bold shadow-sm hover:translate-y-[-1px] transition-all group">
+             <PlusIcon className="mr-2 size-4 group-hover:rotate-90 transition-transform" /> Create Project
+           </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -93,37 +95,35 @@ export default function DashboardPage() {
            </Card>
          ) : projects.map(project => (
             <Link key={project.id} to={`/projects/${project.id}`}>
-              <Card className="p-6 h-full rounded-xl bg-card border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all group flex flex-col justify-between">
+              <Card className="p-6 h-full rounded-2xl bg-card border-border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-primary/30 transition-all group flex flex-col justify-between">
                 <div>
-                   <div className="flex justify-between items-start mb-4">
-                     <div className="h-10 w-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                       <LayoutGrid className="size-5" />
+                   <div className="flex justify-between items-center mb-5">
+                     <div className="h-12 w-12 rounded-xl bg-primary/5 text-primary flex items-center justify-center group-hover:scale-105 group-hover:bg-primary/10 transition-all">
+                       <LayoutGrid className="size-6" />
                      </div>
-                     <div className="font-mono text-[9px] text-muted-foreground/40 font-bold uppercase tracking-widest bg-muted/20 px-2 py-0.5 rounded">
-                        {project.project_key}
-                     </div>
+                     <ArrowRight className="size-4 text-muted-foreground/30 group-hover:translate-x-1 group-hover:text-primary transition-all" />
                    </div>
                    <h3 className="text-xl font-bold tracking-tight mb-2 group-hover:text-primary transition-colors">{project.name}</h3>
-                   <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed italic">
+                   <div className="font-mono text-[10px] sm:text-xs text-muted-foreground/50 font-bold uppercase tracking-widest mb-3 truncate">
+                      {project.project_key}
+                   </div>
+                   <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed italic">
                      {project.description || "No description provided."}
                    </p>
                 </div>
                 
                 <div className="mt-6 pt-4 border-t border-border/10 flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                         <Activity className="size-3 text-emerald-500" /> Connected
-                      </div>
+                   <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full">
+                      <Activity className="size-3" /> Connected
                    </div>
-                   <ArrowRight className="size-4 text-muted-foreground/30 group-hover:translate-x-1 group-hover:text-primary transition-all" />
                 </div>
               </Card>
             </Link>
          ))}
       </div>
 
-      <div className="grid gap-8 grid-cols-1 lg:grid-cols-2 mt-12">
-        <div className="space-y-6">
+      <div className="grid gap-8 grid-cols-1 lg:grid-cols-2 mt-12 pb-8">
+        <div className="space-y-5">
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-3">
             <Zap className="size-5 text-primary" />
             Quick Setup
@@ -135,43 +135,46 @@ export default function DashboardPage() {
                { t: "3. Inject Secrets", d: "Use 'synkrypt run' to securely inject variables." },
                { t: "4. Deploy", d: "Connect your cloud providers to sync config." },
              ].map((step, i) => (
-               <div key={i} className="flex gap-4 p-4 rounded-xl bg-muted/10 border border-border/20 hover:bg-muted/20 transition-all group">
-                 <div className="font-bold text-2xl opacity-10 group-hover:opacity-30 group-hover:text-primary transition-all select-none">0{i+1}</div>
-                 <div>
-                   <h4 className="font-bold text-sm text-foreground mb-0.5">{step.t}</h4>
-                   <p className="text-[11px] text-muted-foreground leading-relaxed italic">{step.d}</p>
+               <div key={i} className="flex gap-4 p-5 rounded-2xl bg-muted/5 border border-border/40 hover:bg-muted/10 transition-colors group items-center">
+                 <div className="font-black text-3xl opacity-10 group-hover:opacity-30 group-hover:text-primary transition-all select-none w-12 text-center">0{i+1}</div>
+                 <div className="flex-1">
+                   <h4 className="font-bold text-sm text-foreground mb-1">{step.t}</h4>
+                   <p className="text-xs text-muted-foreground leading-relaxed italic">{step.d}</p>
                  </div>
                </div>
              ))}
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5 flex flex-col">
            <h3 className="text-xl font-bold tracking-tight flex items-center gap-3">
             <ShieldCheck className="size-5 text-primary" />
-            Features
+            Capabilities
           </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="p-6 rounded-xl bg-card border-border flex flex-col items-center text-center shadow-sm">
-               <div className="h-10 w-10 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center mb-3">
-                  <Terminal className="size-4" />
-               </div>
-               <h4 className="font-bold text-xs mb-1">CLI Tools</h4>
-               <p className="text-[9px] text-muted-foreground uppercase tracking-widest">v3.5</p>
-            </Card>
-             <Card className="p-6 rounded-xl bg-card border-border flex flex-col items-center text-center shadow-sm">
-               <div className="h-10 w-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center mb-3">
-                  <Key className="size-4" />
-               </div>
-               <h4 className="font-bold text-xs mb-1">RBAC</h4>
-               <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Enterprise</p>
-            </Card>
-          </div>
-          <div className="bg-primary/5 rounded-xl p-6 border border-primary/10 relative overflow-hidden group">
-             <h3 className="text-lg font-bold tracking-tight mb-2">Zero Trust</h3>
-             <p className="text-muted-foreground text-[11px] leading-relaxed max-w-sm italic">
-                Data is encrypted locally before transmission. We never store plaintext secrets.
-             </p>
+          <div className="flex flex-col gap-3 flex-1"> 
+            <div className="grid grid-cols-2 gap-3 h-full min-h-[140px]">
+              <Card className="p-6 rounded-2xl bg-card border-border/50 flex flex-col justify-center items-center text-center shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)]">
+                 <div className="h-12 w-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4">
+                    <Terminal className="size-5" />
+                 </div>
+                 <h4 className="font-bold text-sm mb-1">CLI Tools</h4>
+                 <p className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-widest">v3.5 Native</p>
+              </Card>
+               <Card className="p-6 rounded-2xl bg-card border-border/50 flex flex-col justify-center items-center text-center shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)]">
+                 <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4">
+                    <Key className="size-5" />
+                 </div>
+                 <h4 className="font-bold text-sm mb-1">Enterprise RBAC</h4>
+                 <p className="text-[10px] text-muted-foreground/60 uppercase font-mono tracking-widest">Granular Control</p>
+              </Card>
+            </div>
+            
+            <div className="bg-primary/5 rounded-2xl p-8 border border-primary/10 relative overflow-hidden group">
+               <h3 className="text-lg font-bold tracking-tight mb-2 text-primary">Zero Trust Architecture</h3>
+               <p className="text-primary/70 text-sm leading-relaxed italic">
+                  Data is encrypted locally before transmission using AES-256 GCM. We never see plaintext secrets.
+               </p>
+            </div>
           </div>
         </div>
       </div>
@@ -191,7 +194,7 @@ export default function DashboardPage() {
             
             <form id="project-form" onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="p-name" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Project Name</Label>
+                <Label htmlFor="p-name" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Project Name</Label>
                 <Input
                   id="p-name"
                   placeholder="e.g. Production API"
@@ -202,7 +205,7 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="p-desc" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
+                <Label htmlFor="p-desc" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
                 <Input
                   id="p-desc"
                   placeholder="Service description..."
@@ -212,7 +215,7 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="p-repo" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">GitHub (Optional)</Label>
+                <Label htmlFor="p-repo" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">GitHub (Optional)</Label>
                 <Input
                   id="p-repo"
                   placeholder="org/repo"

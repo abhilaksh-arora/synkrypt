@@ -305,10 +305,10 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="space-y-8 pb-20">
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm md:p-8">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] md:p-8">
+        <div className="flex flex-col gap-6">
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-primary/80">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary/80">
               <Terminal className="size-3.5" />
               <span>Project Overview</span>
             </div>
@@ -319,12 +319,12 @@ export default function ProjectDetailPage() {
                     <Settings2 size={16} />
                  </Button>
               </div>
-              <p className="text-muted-foreground text-base max-w-xl leading-relaxed italic">
+              <p className="text-muted-foreground text-sm max-w-xl leading-relaxed italic">
                  {project?.description || "No description provided."}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-primary shadow-sm">
+              <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-primary shadow-sm">
                 <KeyRound className="size-4" />
                 <span>Project Key</span>
                 <span className="font-mono text-xs lowercase tracking-normal text-primary/80 ml-2">{project?.project_key}</span>
@@ -332,84 +332,85 @@ export default function ProjectDetailPage() {
                   <CopyIcon className="size-3.5" />
                 </button>
               </div>
-              <div className="rounded-xl border border-border bg-background/70 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground shadow-sm">
-                {projectMembers.length} team members
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/20 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-muted-foreground shadow-sm">
+                <Users className="size-4" />
+                <span>{projectMembers.length} team members</span>
               </div>
             </div>
-          </div>
-
-          <div className="flex w-full flex-col gap-4 xl:max-w-4xl xl:items-end">
-            <Tabs value={env} onValueChange={setEnv} className="w-full xl:w-auto">
-              <TabsList className="grid h-auto w-full grid-cols-3 rounded-xl border border-border bg-muted/30 p-1 xl:w-auto xl:min-w-[320px]">
-                <TabsTrigger value="dev" className="rounded-lg px-4 py-2 font-bold text-[10px] uppercase tracking-widest">Dev</TabsTrigger>
-                <TabsTrigger value="staging" className="rounded-lg px-4 py-2 font-bold text-[10px] uppercase tracking-widest">Staging</TabsTrigger>
-                <TabsTrigger value="prod" className="rounded-lg px-4 py-2 font-bold text-[10px] uppercase tracking-widest">Prod</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            {user?.role === 'admin' && (
-              <div className="flex flex-wrap gap-3 xl:justify-end">
-                <Button onClick={() => setIsAddOpen(true)} className="h-9 rounded-lg px-4 font-bold shadow-sm group text-sm">
-                  <PlusIcon className="mr-1.5 size-4 group-hover:rotate-90 transition-transform" /> Add Secret
-                </Button>
-                <Button onClick={() => setIsBulkOpen(true)} variant="outline" className="h-9 rounded-lg px-4 font-bold text-sm">
-                  <FileUp className="mr-1.5 size-4" /> Bulk Import
-                </Button>
-                <Button onClick={() => setIsSyncOpen(true)} variant="outline" className="h-9 rounded-lg px-4 font-bold text-sm">
-                  <ArrowRightLeft className="mr-1.5 size-4" /> Sync Env
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="h-auto justify-start gap-2 rounded-xl border border-border bg-muted/10 p-1">
-          <TabsTrigger value="secrets" className="rounded-lg px-4 py-2 font-bold text-[11px] uppercase tracking-widest">Secrets</TabsTrigger>
-          <TabsTrigger value="audit" className="rounded-lg px-4 py-2 font-bold text-[11px] uppercase tracking-widest">Audit Logs</TabsTrigger>
-          <TabsTrigger value="team" className="rounded-lg px-4 py-2 font-bold text-[11px] uppercase tracking-widest">Team</TabsTrigger>
+        <TabsList className="h-auto justify-start gap-2 rounded-xl border border-border bg-muted/10 p-1 mb-2">
+          <TabsTrigger value="secrets" className="rounded-lg px-6 py-2.5 font-bold text-sm uppercase tracking-widest">Secrets</TabsTrigger>
+          <TabsTrigger value="audit" className="rounded-lg px-6 py-2.5 font-bold text-sm uppercase tracking-widest">Audit Logs</TabsTrigger>
+          <TabsTrigger value="team" className="rounded-lg px-6 py-2.5 font-bold text-sm uppercase tracking-widest">Team</TabsTrigger>
         </TabsList>
       </Tabs>
 
       {activeTab === 'secrets' ? (
-        <>
+        <div className="space-y-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-card rounded-2xl border border-border p-4 shadow-sm">
+             <Tabs value={env} onValueChange={setEnv} className="w-full lg:w-auto">
+               <TabsList className="grid h-auto w-full grid-cols-3 rounded-xl border border-border bg-muted/30 p-1 lg:w-auto lg:min-w-[320px]">
+                 <TabsTrigger value="dev" className="rounded-lg px-4 py-2 font-bold text-sm uppercase tracking-widest transition-all">Dev</TabsTrigger>
+                 <TabsTrigger value="staging" className="rounded-lg px-4 py-2 font-bold text-sm uppercase tracking-widest transition-all">Staging</TabsTrigger>
+                 <TabsTrigger value="prod" className="rounded-lg px-4 py-2 font-bold text-sm uppercase tracking-widest transition-all">Prod</TabsTrigger>
+               </TabsList>
+             </Tabs>
+             {user?.role === 'admin' && (
+               <div className="flex flex-wrap gap-3 lg:justify-end">
+                 <Button onClick={() => setIsAddOpen(true)} className="h-10 rounded-xl px-5 font-bold shadow-sm group text-sm">
+                   <PlusIcon className="mr-2 size-4 group-hover:rotate-90 transition-transform" /> Add Secret
+                 </Button>
+                 <Button onClick={() => setIsBulkOpen(true)} variant="outline" className="h-10 rounded-xl px-5 font-bold text-sm bg-background border-border hover:bg-muted/50">
+                   <FileUp className="mr-2 size-4 text-muted-foreground" /> Bulk Import
+                 </Button>
+                 <Button onClick={() => setIsSyncOpen(true)} variant="outline" className="h-10 rounded-xl px-5 font-bold text-sm bg-background border-border hover:bg-muted/50">
+                   <ArrowRightLeft className="mr-2 size-4 text-muted-foreground" /> Sync Env
+                 </Button>
+               </div>
+             )}
+          </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-         <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
+         <Card className="p-6 rounded-2xl bg-card border-border flex items-center justify-between group shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-md">
             <div>
-               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Active Secrets</p>
-               <h4 className="text-2xl font-bold tracking-tight">{secrets.length}</h4>
+               <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5">Active Secrets</p>
+               <h4 className="text-3xl font-bold tracking-tight">{secrets.length}</h4>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
-               <ShieldCheck className="size-5" />
+            <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-105">
+               <ShieldCheck className="size-6" />
             </div>
          </Card>
-         <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
+         <Card className="p-6 rounded-2xl bg-card border-border flex items-center justify-between group shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-md">
             <div>
-               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Project Wide</p>
-               <h4 className="text-2xl font-bold tracking-tight">{secrets.filter(s => !s.is_personal).length}</h4>
+               <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5">Project Wide</p>
+               <h4 className="text-3xl font-bold tracking-tight">{secrets.filter(s => !s.is_personal).length}</h4>
             </div>
-             <div className="h-10 w-10 rounded-xl bg-blue-500/5 text-blue-500 flex items-center justify-center">
-                <Globe className="size-5" />
+             <div className="h-12 w-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center transition-transform group-hover:scale-105">
+                <Globe className="size-6" />
              </div>
          </Card>
-         <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
+         <Card className="p-6 rounded-2xl bg-card border-border flex items-center justify-between group shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-md">
             <div>
-               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">My Personal</p>
-               <h4 className="text-2xl font-bold tracking-tight">{secrets.filter(s => s.is_personal).length}</h4>
+               <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5">My Personal</p>
+               <h4 className="text-3xl font-bold tracking-tight">{secrets.filter(s => s.is_personal).length}</h4>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-amber-500/5 text-amber-500 flex items-center justify-center">
-               <UserIcon className="size-5" />
+            <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center transition-transform group-hover:scale-105">
+               <UserIcon className="size-6" />
             </div>
          </Card>
       </div>
 
-      <Card className="rounded-xl bg-card border-border shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-border flex flex-col md:flex-row justify-between items-center gap-3 bg-muted/5">
+      <Card className="rounded-2xl bg-card border-border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div className="px-6 py-4 border-b border-border flex flex-col md:flex-row justify-between items-center gap-3 bg-muted/5">
            <div className="relative w-full md:max-w-md group">
               <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
               <Input 
                  placeholder="Search secrets..." 
-                 className="pl-9 h-9 rounded-lg bg-background border-border text-sm"
+                 className="pl-9 h-10 rounded-xl bg-background border-border text-sm shadow-sm"
                  value={search}
                  onChange={e => setSearch(e.target.value)}
               />
@@ -420,10 +421,10 @@ export default function ProjectDetailPage() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="w-[30%] py-6 pl-12 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Variable Name</TableHead>
-                <TableHead className="w-[40%] text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Value</TableHead>
-                <TableHead className="w-[15%] text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Show in UI</TableHead>
-                <TableHead className="w-[15%] text-right pr-12 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Actions</TableHead>
+                <TableHead className="w-[30%] py-4 pl-12 text-xs uppercase tracking-widest font-bold text-muted-foreground/60">Variable Name</TableHead>
+                <TableHead className="w-[40%] text-xs uppercase tracking-widest font-bold text-muted-foreground/60">Value</TableHead>
+                <TableHead className="w-[15%] text-xs uppercase tracking-widest font-bold text-muted-foreground/60">Show in UI</TableHead>
+                <TableHead className="w-[15%] text-right pr-12 text-xs uppercase tracking-widest font-bold text-muted-foreground/60">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -467,13 +468,13 @@ export default function ProjectDetailPage() {
                                           <UserIcon size={12} />
                                        </div>
                                     </TooltipTrigger>
-                                    <TooltipContent className="rounded-lg border-border font-bold text-[10px]">Personal Variable</TooltipContent>
+                                    <TooltipContent className="rounded-lg border-border font-bold text-sm">Personal Variable</TooltipContent>
                                  </Tooltip>
                               </TooltipProvider>
                            )}
                         </div>
                         {secret.type === 'file' && (
-                           <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50 ml-1.5 flex items-center gap-1.5">
+                           <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground/50 ml-1.5 flex items-center gap-1.5">
                               <ShieldCheck size={10} className="text-emerald-500" />
                               {secret.metadata?.filename} 
                            </div>
@@ -523,7 +524,7 @@ export default function ProjectDetailPage() {
           </Table>
         </div>
       </Card>
-      </>
+        </div>
       ) : activeTab === 'audit' ? (
         <div className="space-y-6">
            <Card className="rounded-xl bg-card border-border shadow-sm overflow-hidden p-6 relative">
@@ -573,20 +574,20 @@ export default function ProjectDetailPage() {
                                  <div className="text-xs font-bold text-foreground">
                                     {new Date(log.created_at).toLocaleDateString()}
                                  </div>
-                                 <div className="text-[10px] text-primary font-mono font-bold">{new Date(log.created_at).toLocaleTimeString()}</div>
+                                 <div className="text-sm text-primary font-mono font-bold">{new Date(log.created_at).toLocaleTimeString()}</div>
                               </div>
                            </div>
                            {log.metadata && (
                               <div className="mt-4 p-4 rounded-xl bg-muted/5 border border-border grid grid-cols-1 md:grid-cols-2 gap-4 shadow-inner">
                                  <div className="space-y-1">
-                                    <span className="text-[9px] opacity-40 uppercase font-bold tracking-widest block">Variable</span>
+                                    <span className="text-xs opacity-40 uppercase font-bold tracking-widest block">Variable</span>
                                     <div className="text-foreground font-bold text-xs bg-background p-2 rounded-lg border border-border inline-block min-w-[150px] font-mono">
                                        {log.metadata.key || "General Config"}
                                     </div>
                                  </div>
                                  <div className="space-y-1">
-                                    <span className="text-[9px] opacity-40 uppercase font-bold tracking-widest block">Env</span>
-                                    <Badge variant="outline" className="text-primary font-bold text-[10px] px-3 py-1 rounded-lg border-primary/20 bg-primary/5 uppercase">
+                                    <span className="text-xs opacity-40 uppercase font-bold tracking-widest block">Env</span>
+                                    <Badge variant="outline" className="text-primary font-bold text-sm px-3 py-1 rounded-lg border-primary/20 bg-primary/5 uppercase">
                                        {log.metadata.env || "dev"}
                                     </Badge>
                                  </div>
@@ -634,7 +635,7 @@ export default function ProjectDetailPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="truncate text-sm font-bold tracking-tight text-foreground">{m.name}</div>
-                            <div className="truncate text-[10px] font-mono text-muted-foreground/60 italic mt-0.5">{m.email}</div>
+                            <div className="truncate text-sm font-mono text-muted-foreground/60 italic mt-0.5">{m.email}</div>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1.5">
@@ -651,17 +652,17 @@ export default function ProjectDetailPage() {
 
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                           <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 ml-0.5">
+                           <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 ml-0.5">
                              Access Matrix
                            </div>
                            {m.expires_at && (
                               <TooltipProvider>
                                  <Tooltip>
-                                    <TooltipTrigger className="flex items-center gap-1 text-[9px] font-bold text-amber-600 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
+                                    <TooltipTrigger className="flex items-center gap-1 text-xs font-bold text-amber-600 uppercase tracking-tighter bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
                                        <Clock size={9} /> 
                                        {isExpired ? 'EXPIRED' : `TTL: ${new Date(m.expires_at).toLocaleDateString()}`}
                                     </TooltipTrigger>
-                                    <TooltipContent className="font-bold text-[10px]">Auto-revocation active.</TooltipContent>
+                                    <TooltipContent className="font-bold text-sm">Auto-revocation active.</TooltipContent>
                                  </Tooltip>
                               </TooltipProvider>
                            )}
@@ -670,7 +671,7 @@ export default function ProjectDetailPage() {
                           {['dev', 'staging', 'prod'].map(level => (
                             <div
                               key={level}
-                              className={`rounded-lg border px-3 py-1 text-[9px] font-bold uppercase tracking-widest transition-all ${
+                              className={`rounded-lg border px-3 py-1 text-xs font-bold uppercase tracking-widest transition-all ${
                                 m.environments?.includes(level)
                                   ? 'border-primary/30 bg-primary/10 text-primary'
                                   : 'border-border/10 bg-muted/5 text-muted-foreground/30 opacity-60'
@@ -805,16 +806,16 @@ export default function ProjectDetailPage() {
             </DialogHeader>
             <form id="settings-form" onSubmit={handleUpdateSettings} className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Project Name</Label>
+                <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Project Name</Label>
                 <Input className="h-9 rounded-lg bg-muted/30 border-border px-4 font-bold text-sm" value={settingsForm.name} onChange={e => setSettingsForm({ ...settingsForm, name: e.target.value })} required />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
+                <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
                 <Input className="h-9 rounded-lg bg-muted/30 border-border px-4 text-sm" value={settingsForm.description} onChange={e => setSettingsForm({ ...settingsForm, description: e.target.value })} />
               </div>
               
               <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2"><Activity size={12} /> Security Webhooks</h4>
+                 <h4 className="text-sm font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2"><Activity size={12} /> Security Webhooks</h4>
                  <Button type="button" variant="outline" className="w-full rounded-lg border-primary/20 bg-background text-primary font-bold h-9 text-xs" onClick={() => { setIsSettingsOpen(false); setIsWebhookOpen(true); }}>
                     Configure Webhooks
                  </Button>
@@ -822,7 +823,7 @@ export default function ProjectDetailPage() {
 
               <div className="p-5 rounded-xl bg-destructive/5 border border-destructive/20 shadow-inner">
                   <h4 className="text-sm font-bold text-destructive flex items-center gap-2 mb-1"><XCircle size={14} /> Danger Zone</h4>
-                  <p className="text-[10px] text-destructive/70 mb-4 font-medium italic">Purge secrets and members.</p>
+                  <p className="text-sm text-destructive/70 mb-4 font-medium italic">Purge secrets and members.</p>
                   <Button type="button" variant="destructive" className="w-full h-9 rounded-lg font-bold text-xs" onClick={handleDeleteProject}>Delete Project</Button>
               </div>
             </form>
@@ -847,7 +848,7 @@ export default function ProjectDetailPage() {
             </DialogHeader>
             <form id="webhook-form" onSubmit={handleAddWebhook} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="w-url" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Webhook URL</Label>
+                <Label htmlFor="w-url" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Webhook URL</Label>
                 <Input id="w-url" placeholder="https://hooks.slack.com/..." className="h-9 rounded-lg bg-muted/30 border-border px-4 font-mono text-xs" value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} required />
               </div>
             </form>
@@ -871,11 +872,11 @@ export default function ProjectDetailPage() {
             </DialogHeader>
             <form id="secret-form" onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="s-key" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Variable Name</Label>
+                <Label htmlFor="s-key" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Variable Name</Label>
                 <Input id="s-key" className="h-9 rounded-lg bg-muted/30 border-border px-4 focus:bg-background font-mono font-bold text-sm uppercase" value={newSecret.key} onChange={e => setNewSecret(p => ({ ...p, key: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '_') }))} required />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="s-val" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Value</Label>
+                <Label htmlFor="s-val" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Value</Label>
                 <Input id="s-val" type="password" className="h-9 rounded-lg bg-muted/30 border-border px-4 focus:bg-background font-mono text-sm" value={newSecret.value} onChange={e => setNewSecret(p => ({ ...p, value: e.target.value }))} required />
               </div>
               <div className="grid grid-cols-1 gap-2.5">
@@ -911,23 +912,26 @@ export default function ProjectDetailPage() {
               <div className="space-y-3">
                  {['dev', 'staging', 'prod'].map(cluster => {
                   const isChecked = clearanceEnvs.includes(cluster);
-                  const toggle = () => {
-                    if (isChecked) setClearanceEnvs(p => p.filter(e => e !== cluster));
-                    else setClearanceEnvs(p => [...p, cluster]);
-                  };
                   return (
-                    <div key={cluster} className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer group shadow-sm ${isChecked ? 'bg-primary/[0.03] border-primary/20' : 'bg-muted/5 border-border opacity-60 hover:opacity-100'}`} onClick={toggle}>
+                    <div key={cluster} className={`flex items-center justify-between p-4 rounded-xl border transition-all shadow-sm ${isChecked ? 'bg-primary/[0.03] border-primary/20' : 'bg-muted/5 border-border opacity-60 hover:opacity-100'}`}>
                       <div className="flex items-center gap-4">
-                         <div className={`h-10 w-10 rounded-lg flex items-center justify-center font-bold text-[10px] uppercase transition-all ${isChecked ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground'}`}>{cluster.charAt(0)}</div>
+                         <div className={`h-10 w-10 rounded-lg flex items-center justify-center font-bold text-sm uppercase transition-all ${isChecked ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground'}`}>{cluster.charAt(0)}</div>
                          <div className="font-bold text-sm uppercase tracking-widest">{cluster} Environment</div>
                       </div>
-                      <Switch checked={isChecked} onCheckedChange={toggle} />
+                      <Switch 
+                        checked={isChecked} 
+                        onCheckedChange={(checked) => {
+                          setClearanceEnvs(prev => 
+                            checked ? [...prev, cluster] : prev.filter(e => e !== cluster)
+                          );
+                        }} 
+                      />
                     </div>
                   );
                 })}
               </div>
                <div className="space-y-2">
-                  <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50 ml-1">Access Expiration (TTL)</Label>
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/50 ml-1">Access Expiration (TTL)</Label>
                   <Input type="date" className="h-9 rounded-lg bg-muted/10 border-border font-mono text-xs" value={clearanceTTL} onChange={e => setClearanceTTL(e.target.value)} />
                </div>
             </form>
@@ -972,15 +976,15 @@ export default function ProjectDetailPage() {
               <div className="mt-8 p-6 rounded-3xl bg-muted/20 border border-border animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col md:flex-row gap-8 justify-between">
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Environments</Label>
+                    <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">Environments</Label>
                     <div className="flex gap-2">
                       {['dev', 'staging', 'prod'].map(cluster => (
-                        <button key={cluster} onClick={() => { if (clearanceEnvs.includes(cluster)) setClearanceEnvs(p => p.filter(e => e !== cluster)); else setClearanceEnvs(p => [...p, cluster]); }} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${clearanceEnvs.includes(cluster) ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground border border-border'}`}>{cluster}</button>
+                        <button key={cluster} onClick={() => { if (clearanceEnvs.includes(cluster)) setClearanceEnvs(p => p.filter(e => e !== cluster)); else setClearanceEnvs(p => [...p, cluster]); }} className={`px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-widest transition-all ${clearanceEnvs.includes(cluster) ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground border border-border'}`}>{cluster}</button>
                       ))}
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Expiration Date (TTL)</Label>
+                    <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">Expiration Date (TTL)</Label>
                     <div className="flex items-center gap-3"><Calendar size={18} className="text-muted-foreground" /><Input type="date" className="h-10 rounded-xl bg-muted/50 border-border font-mono text-xs" value={clearanceTTL} onChange={e => setClearanceTTL(e.target.value)} /></div>
                   </div>
                 </div>

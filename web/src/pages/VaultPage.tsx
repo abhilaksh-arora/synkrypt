@@ -78,11 +78,11 @@ export default function VaultPage() {
     <div className="space-y-12 pb-20">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-           <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-[10px] mb-2">
+           <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-sm mb-2">
              <Lock className="size-3" />
              Personal Security Store
            </div>
-           <h2 className="text-4xl font-bold tracking-tighter text-foreground">My Vault</h2>
+           <h2 className="text-3xl font-bold tracking-tighter text-foreground">My Vault</h2>
            <p className="text-muted-foreground mt-2 max-w-xl">
               Access credentials and assets issued specifically to your identity. 
               These are not tied to any project and are for your personal use.
@@ -91,33 +91,33 @@ export default function VaultPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-         <Card className="p-8 rounded-3xl bg-card border-border flex items-center justify-between group shadow-sm">
+         <Card className="p-6 rounded-2xl bg-card border-border flex items-center justify-between group shadow-sm">
             <div>
-               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Stored Assets</p>
-               <h4 className="text-4xl font-bold tracking-tight">{assets.length}</h4>
+               <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Stored Assets</p>
+               <h4 className="text-3xl font-bold tracking-tight">{assets.length}</h4>
             </div>
-            <div className="h-16 w-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
-               <Briefcase className="size-8" />
+            <div className="h-12 w-12 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
+               <Briefcase className="size-6" />
             </div>
          </Card>
-         <Card className="p-8 rounded-3xl bg-card border-border flex items-center justify-between group shadow-sm">
+         <Card className="p-6 rounded-2xl bg-card border-border flex items-center justify-between group shadow-sm">
             <div>
-               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Security Status</p>
-               <h4 className="text-4xl font-bold tracking-tight text-emerald-500">Protected</h4>
+               <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Security Status</p>
+               <h4 className="text-3xl font-bold tracking-tight text-emerald-500">Protected</h4>
             </div>
-             <div className="h-16 w-16 rounded-2xl bg-emerald-500/5 text-emerald-500 flex items-center justify-center">
-                <ShieldCheck className="size-8" />
+             <div className="h-12 w-12 rounded-xl bg-emerald-500/5 text-emerald-500 flex items-center justify-center">
+                <ShieldCheck className="size-6" />
              </div>
          </Card>
       </div>
 
-      <Card className="rounded-3xl bg-card border-border shadow-sm overflow-hidden relative">
-        <div className="p-10 border-b border-border flex flex-col md:flex-row justify-between items-center gap-6 bg-muted/5">
+      <Card className="rounded-2xl bg-card border-border shadow-sm overflow-hidden relative">
+        <div className="px-6 py-4 border-b border-border flex flex-col md:flex-row justify-between items-center gap-6 bg-muted/5">
            <div className="relative w-full md:max-w-lg group">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
               <Input 
                  placeholder="Search your vault..." 
-                 className="pl-12 h-14 rounded-xl bg-background border-border focus:ring-primary/20 transition-all font-medium"
+                 className="pl-10 h-10 rounded-xl bg-background border-border focus:ring-primary/20 transition-all font-medium text-sm"
                  value={search}
                  onChange={e => setSearch(e.target.value)}
               />
@@ -128,9 +128,9 @@ export default function VaultPage() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="py-6 pl-12 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[40%]">Asset Identity</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[40%]">Payload Preview</TableHead>
-                <TableHead className="text-right pr-12 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[20%]">Actions</TableHead>
+                <TableHead className="py-6 pl-12 text-sm uppercase tracking-widest font-bold text-muted-foreground/60 w-[40%]">Asset Identity</TableHead>
+                <TableHead className="text-sm uppercase tracking-widest font-bold text-muted-foreground/60 w-[40%]">Payload Preview</TableHead>
+                <TableHead className="text-right pr-12 text-sm uppercase tracking-widest font-bold text-muted-foreground/60 w-[20%]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -154,19 +154,19 @@ export default function VaultPage() {
                 </TableRow>
               ) : filteredAssets.map(asset => (
                 <TableRow key={asset.id} className="border-border group hover:bg-muted/5 transition-colors">
-                  <TableCell className="pl-12">
-                     <div className="flex items-center gap-5 py-6">
-                        <div className={`h-12 w-12 rounded-xl border flex items-center justify-center shadow-sm ${
+                  <TableCell className="pl-6">
+                     <div className="flex items-center gap-4 py-4">
+                        <div className={`h-10 w-10 rounded-xl border flex items-center justify-center shadow-sm ${
                            asset.type === 'file' ? 'bg-blue-500/5 text-blue-500 border-blue-500/10' :
                            asset.type === 'vpn' ? 'bg-amber-500/5 text-amber-500 border-amber-500/10' :
                            'bg-primary/5 text-primary border-primary/10'
                         }`}>
-                           <FileText size={24} />
+                           <FileText size={20} />
                         </div>
                         <div>
-                           <div className="font-bold text-foreground text-lg tracking-tight">{asset.name}</div>
-                           <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="px-1.5 py-0 text-[8px] uppercase">{asset.type}</Badge>
+                           <div className="font-bold text-foreground text-base tracking-tight">{asset.name}</div>
+                           <div className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="px-1.5 py-0 text-[10px] uppercase">{asset.type}</Badge>
                               {asset.metadata?.filename && <span>• {asset.metadata.filename}</span>}
                            </div>
                         </div>
@@ -212,7 +212,7 @@ export default function VaultPage() {
           </Table>
         </div>
         <div className="p-8 bg-muted/5 flex justify-center border-t border-border">
-           <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
+           <div className="flex items-center gap-3 text-sm font-bold text-muted-foreground/30 uppercase tracking-widest">
               <Info className="size-4" /> Secure Identity Store // Encrypted with Server Root
            </div>
         </div>

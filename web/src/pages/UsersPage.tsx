@@ -110,7 +110,7 @@ function MemberVaultCard({
                 <Crown className="size-3 text-amber-500" />
               )}
             </div>
-            <div className="text-[10px] font-mono text-muted-foreground/60 flex items-center gap-1 mt-0.5">
+            <div className="text-sm font-mono text-muted-foreground/60 flex items-center gap-1 mt-0.5">
               <Mail className="size-2.5" /> {user.email}
             </div>
           </div>
@@ -118,18 +118,18 @@ function MemberVaultCard({
 
         <div className="flex items-center gap-2">
           {assets.length > 0 ? (
-            <Badge className="bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest">
+            <Badge className="bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-widest">
               {assets.length} credential{assets.length !== 1 ? "s" : ""}
             </Badge>
           ) : (
-            <Badge className="bg-muted/10 text-muted-foreground/40 border-transparent rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest italic">
+            <Badge className="bg-muted/10 text-muted-foreground/40 border-transparent rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-widest italic">
               Empty
             </Badge>
           )}
           <Button
             variant="outline"
             size="sm"
-            className="rounded-md h-7 px-2.5 text-[9px] font-bold uppercase tracking-widest border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+            className="rounded-md h-7 px-2.5 text-xs font-bold uppercase tracking-widest border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
             onClick={(e) => {
               e.stopPropagation();
               onIssue(user);
@@ -176,7 +176,7 @@ function MemberVaultCard({
                     <div className="text-xs font-semibold tracking-tight">
                       {asset.name}
                     </div>
-                    <div className="text-[9px] font-medium text-muted-foreground/60 uppercase tracking-widest mt-0.5">
+                    <div className="text-xs font-medium text-muted-foreground/60 uppercase tracking-widest mt-0.5">
                       {asset.type === "other" && asset.metadata?.customType 
                         ? asset.metadata.customType 
                         : asset.type === "file"
@@ -430,7 +430,7 @@ export default function UsersPage() {
       {/* ── Page header ─────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-1.5 text-primary font-bold uppercase tracking-widest text-[9px] mb-1.5">
+          <div className="flex items-center gap-1.5 text-primary font-bold uppercase tracking-widest text-xs mb-1.5">
             <Shield className="size-2.5" />
             User Management
           </div>
@@ -450,7 +450,7 @@ export default function UsersPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-5 rounded-2xl bg-card border-border flex items-center justify-between shadow-sm">
           <div>
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">
               Total Users
             </p>
             <h4 className="text-2xl font-bold tracking-tight">{users.length}</h4>
@@ -461,7 +461,7 @@ export default function UsersPage() {
         </Card>
         <Card className="p-5 rounded-2xl bg-card border-border flex items-center justify-between shadow-sm">
           <div>
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">
               Active Projects
             </p>
             <h4 className="text-2xl font-bold tracking-tight text-emerald-500">
@@ -474,7 +474,7 @@ export default function UsersPage() {
         </Card>
         <Card className="p-5 rounded-2xl bg-card border-border flex items-center justify-between shadow-sm">
           <div>
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">
               Issued Credentials
             </p>
             <h4 className="text-2xl font-bold tracking-tight text-violet-500">{totalCredentials}</h4>
@@ -503,16 +503,16 @@ export default function UsersPage() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="py-2.5 pl-5 text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[30%]">
+                <TableHead className="py-2.5 pl-5 text-xs uppercase tracking-widest font-bold text-muted-foreground/60 w-[30%]">
                   User
                 </TableHead>
-                <TableHead className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[15%]">
+                <TableHead className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60 w-[15%]">
                   Status
                 </TableHead>
-                <TableHead className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[35%]">
+                <TableHead className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60 w-[35%]">
                   Project Access
                 </TableHead>
-                <TableHead className="text-right pr-5 text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[20%]">
+                <TableHead className="text-right pr-5 text-xs uppercase tracking-widest font-bold text-muted-foreground/60 w-[20%]">
                   Actions
                 </TableHead>
               </TableRow>
@@ -547,7 +547,7 @@ export default function UsersPage() {
                               {u.name}
                               {u.role === "admin" && <Crown className="size-2.5 text-amber-500" />}
                             </div>
-                            <div className="text-[10px] font-mono text-muted-foreground/60 mt-0.5">
+                            <div className="text-sm font-mono text-muted-foreground/60 mt-0.5">
                               {u.email}
                             </div>
                           </div>
@@ -572,12 +572,12 @@ export default function UsersPage() {
                             </div>
                           ) : u.projects?.length > 0 ? (
                             u.projects.map((p: any) => (
-                              <div key={p.id} className="bg-background border border-border px-1.5 py-0.5 rounded shadow-sm text-[10px] font-semibold">
+                              <div key={p.id} className="bg-background border border-border px-1.5 py-0.5 rounded shadow-sm text-sm font-semibold">
                                 {p.name}
                               </div>
                             ))
                           ) : (
-                            <div className="text-[9px] font-medium text-muted-foreground/30 italic">No assigned projects</div>
+                            <div className="text-xs font-medium text-muted-foreground/30 italic">No assigned projects</div>
                           )}
                         </div>
                       </TableCell>
@@ -586,7 +586,7 @@ export default function UsersPage() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="h-7 px-2 font-semibold text-[9px] uppercase tracking-widest border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+                            className="h-7 px-2 font-semibold text-xs uppercase tracking-widest border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
                             onClick={() => {
                               setSelectedControlUser(u);
                               setIsControlOpen(true);
@@ -616,7 +616,7 @@ export default function UsersPage() {
       <div>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-4">
           <div>
-            <div className="flex items-center gap-1 text-violet-500 font-bold uppercase tracking-widest text-[9px] mb-1">
+            <div className="flex items-center gap-1 text-violet-500 font-bold uppercase tracking-widest text-xs mb-1">
               <Key className="size-2.5" /> Admin Vault
             </div>
             <h3 className="text-lg font-bold tracking-tight text-foreground">Team Assets</h3>
@@ -665,7 +665,7 @@ export default function UsersPage() {
             </DialogHeader>
 
             <div className="space-y-3">
-              <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 ml-1">Assigned Projects</Label>
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 ml-1">Assigned Projects</Label>
               <div className="space-y-2 max-h-[200px] overflow-y-auto rounded-xl bg-muted/10 p-1.5">
                 {selectedUser?.projects?.length > 0 ? (
                   selectedUser.projects.map((p: any) => (
@@ -676,7 +676,7 @@ export default function UsersPage() {
                       </div>
                       <Button
                         variant="ghost" size="sm" disabled={revoking === p.id} onClick={() => handleRevokeProject(p.id)}
-                        className="h-6 px-2 text-[9px] font-bold uppercase text-destructive hover:bg-destructive/10"
+                        className="h-6 px-2 text-xs font-bold uppercase text-destructive hover:bg-destructive/10"
                       >
                         {revoking === p.id ? <Loader2 className="animate-spin size-3" /> : "Revoke"}
                       </Button>
@@ -690,7 +690,7 @@ export default function UsersPage() {
 
             <div className="mt-4 p-4 rounded-xl bg-destructive/5 border border-destructive/20">
               <h4 className="text-xs font-bold text-destructive mb-1 flex items-center gap-2"><XCircle className="size-3.5" /> Full Termination</h4>
-              <p className="text-[10px] text-destructive/70 mb-3">Terminate all project memberships for this user instantly.</p>
+              <p className="text-sm text-destructive/70 mb-3">Terminate all project memberships for this user instantly.</p>
               <Button
                 onClick={handleGlobalRevoke}
                 disabled={revoking === "global" || !selectedUser?.projects?.length}
@@ -724,7 +724,7 @@ export default function UsersPage() {
 
             <form id="issue-form" onSubmit={handleIssueAsset} className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Asset Name</Label>
+                <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Asset Name</Label>
                 <Input
                   placeholder="e.g. Production SSH Key" value={issueForm.name}
                   onChange={(e) => setIssueForm({ ...issueForm, name: e.target.value })}
@@ -733,7 +733,7 @@ export default function UsersPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Asset Type</Label>
+                <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Asset Type</Label>
                 <Select value={issueForm.type} onValueChange={(v) => setIssueForm({ ...issueForm, type: v })}>
                   <SelectTrigger className="h-8 rounded-lg text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -747,7 +747,7 @@ export default function UsersPage() {
 
               {issueForm.type === "other" && (
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Asset Category</Label>
+                  <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Asset Category</Label>
                   <Input
                     placeholder="e.g. API Access, Support Token..."
                     value={(issueForm.metadata as any).customType || ""}
@@ -758,23 +758,23 @@ export default function UsersPage() {
               )}
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Content</Label>
+                <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Content</Label>
                 {issueForm.value ? (
                   <div className="p-2.5 rounded-lg bg-violet-500/5 border border-violet-500/10 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileText size={12} className="text-violet-500" />
                       <span className="text-[11px] font-medium truncate max-w-[180px]">{issueForm.name}</span>
                     </div>
-                    <Button variant="ghost" size="sm" className="h-6 text-[9px] font-bold text-muted-foreground" onClick={() => setIssueForm({ ...issueForm, value: "", metadata: {} })}>Reset</Button>
+                    <Button variant="ghost" size="sm" className="h-6 text-xs font-bold text-muted-foreground" onClick={() => setIssueForm({ ...issueForm, value: "", metadata: {} })}>Reset</Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <Button
-                      type="button" variant="outline" className="h-14 rounded-xl flex-col gap-1 border-dashed border-2 text-[9px] font-bold uppercase text-muted-foreground hover:text-primary"
+                      type="button" variant="outline" className="h-14 rounded-xl flex-col gap-1 border-dashed border-2 text-xs font-bold uppercase text-muted-foreground hover:text-primary"
                       onClick={() => fileInputRef.current?.click()}
                     ><Upload size={14} />Upload</Button>
                     <Button
-                      type="button" variant="outline" className="h-14 rounded-xl flex-col gap-1 border-dashed border-2 text-[9px] font-bold uppercase text-muted-foreground hover:text-primary"
+                      type="button" variant="outline" className="h-14 rounded-xl flex-col gap-1 border-dashed border-2 text-xs font-bold uppercase text-muted-foreground hover:text-primary"
                       onClick={() => { const val = prompt("Paste content:"); if (val) setIssueForm({ ...issueForm, value: val, metadata: {} }); }}
                     ><FileText size={14} />Paste</Button>
                   </div>
@@ -804,11 +804,11 @@ export default function UsersPage() {
             <form id="invite-form" onSubmit={handleInvite} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Name</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground ml-1">Name</Label>
                   <Input placeholder="John Doe" className="h-8 rounded-lg bg-muted/20 border-border text-xs" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} required />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Role</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground ml-1">Role</Label>
                   <Select value={inviteForm.role} onValueChange={(v) => setInviteForm({ ...inviteForm, role: v })}>
                     <SelectTrigger className="h-8 rounded-lg bg-muted/20 border-border text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="developer">Developer</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent>
@@ -816,11 +816,11 @@ export default function UsersPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Email</Label>
+                <Label className="text-xs font-bold uppercase text-muted-foreground ml-1">Email</Label>
                 <Input type="email" placeholder="john@company.com" className="h-8 rounded-lg bg-muted/20 border-border text-xs" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} required />
               </div>
               <div className="space-y-1">
-                <Label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Password</Label>
+                <Label className="text-xs font-bold uppercase text-muted-foreground ml-1">Password</Label>
                 <Input type="password" placeholder="••••••••" className="h-8 rounded-lg bg-muted/20 border-border text-xs" value={inviteForm.password} onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })} required />
               </div>
             </form>

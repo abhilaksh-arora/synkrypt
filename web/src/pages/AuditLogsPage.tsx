@@ -95,7 +95,7 @@ export default function AuditLogsPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-           <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-[9px] mb-1.5">
+           <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-xs mb-1.5">
              <Activity className="size-3" />
              Security Monitoring
            </div>
@@ -110,19 +110,19 @@ export default function AuditLogsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
          <Card className="p-5 rounded-xl bg-card border-border shadow-sm">
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Total Events</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Total Events</p>
             <h4 className="text-xl font-bold tracking-tight">{stats?.total || 0}</h4>
          </Card>
          <Card className="p-5 rounded-xl bg-card border-border shadow-sm">
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Access Events</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Access Events</p>
             <h4 className="text-xl font-bold tracking-tight text-amber-500">{stats?.reads || 0}</h4>
          </Card>
          <Card className="p-5 rounded-xl bg-card border-border shadow-sm">
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Update Events</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Update Events</p>
             <h4 className="text-xl font-bold tracking-tight text-emerald-500">{stats?.writes || 0}</h4>
          </Card>
          <Card className="p-5 rounded-xl bg-card border-border shadow-sm">
-            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Last 24 Hours</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Last 24 Hours</p>
             <h4 className="text-xl font-bold tracking-tight text-blue-500">{stats?.last_24h || 0}</h4>
          </Card>
       </div>
@@ -139,33 +139,33 @@ export default function AuditLogsPage() {
          </div>
          
          <Select value={filters.projectId} onValueChange={v => setFilters({...filters, projectId: v})}>
-            <SelectTrigger className="w-[180px] h-9 rounded-lg bg-background border-border font-bold text-[10px] uppercase tracking-widest">
+            <SelectTrigger className="w-[180px] h-9 rounded-lg bg-background border-border font-bold text-sm uppercase tracking-widest">
                <div className="flex items-center gap-2"><LayoutGrid size={13} /> <SelectValue placeholder="Projects" /></div>
             </SelectTrigger>
             <SelectContent className="rounded-xl border-border shadow-xl">
-               <SelectItem value="all" className="font-bold text-[10px] uppercase">All Projects</SelectItem>
+               <SelectItem value="all" className="font-bold text-sm uppercase">All Projects</SelectItem>
                {projects.map(p => <SelectItem key={p.id} value={p.id} className="font-bold text-xs">{p.name}</SelectItem>)}
             </SelectContent>
          </Select>
 
          {user?.role === 'admin' && (
             <Select value={filters.userId} onValueChange={v => setFilters({...filters, userId: v})}>
-               <SelectTrigger className="w-[180px] h-9 rounded-lg bg-background border-border font-bold text-[10px] uppercase tracking-widest">
+               <SelectTrigger className="w-[180px] h-9 rounded-lg bg-background border-border font-bold text-sm uppercase tracking-widest">
                   <div className="flex items-center gap-2"><UserIcon size={13} /> <SelectValue placeholder="Users" /></div>
                </SelectTrigger>
                <SelectContent className="rounded-xl border-border shadow-xl">
-                  <SelectItem value="all" className="font-bold text-[10px] uppercase">All Users</SelectItem>
+                  <SelectItem value="all" className="font-bold text-sm uppercase">All Users</SelectItem>
                   {users.map(u => <SelectItem key={u.id} value={u.id} className="font-bold text-xs">{u.name}</SelectItem>)}
                </SelectContent>
             </Select>
          )}
 
          <Select value={filters.action} onValueChange={v => setFilters({...filters, action: v})}>
-            <SelectTrigger className="w-[180px] h-9 rounded-lg bg-background border-border font-bold text-[10px] uppercase tracking-widest">
+            <SelectTrigger className="w-[180px] h-9 rounded-lg bg-background border-border font-bold text-sm uppercase tracking-widest">
                <div className="flex items-center gap-2"><Terminal size={13} /> <SelectValue placeholder="Actions" /></div>
             </SelectTrigger>
             <SelectContent className="rounded-xl border-border shadow-xl">
-               <SelectItem value="all" className="font-bold text-[10px] uppercase">All Actions</SelectItem>
+               <SelectItem value="all" className="font-bold text-sm uppercase">All Actions</SelectItem>
                <SelectItem value="secret_read" className="font-bold text-xs">Secret Access</SelectItem>
                <SelectItem value="secret_write" className="font-bold text-xs">Secret Update</SelectItem>
                <SelectItem value="project_create" className="font-bold text-xs">Project Create</SelectItem>
@@ -177,7 +177,7 @@ export default function AuditLogsPage() {
       <Card className="rounded-xl bg-card border-border shadow-sm overflow-hidden relative">
         <div className="overflow-x-auto">
           <div className="min-w-full inline-block align-middle">
-            <div className="border-b border-border bg-muted/10 px-6 py-4 grid grid-cols-12 gap-4 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">
+            <div className="border-b border-border bg-muted/10 px-6 py-4 grid grid-cols-12 gap-4 text-xs font-bold uppercase tracking-widest text-muted-foreground/50">
                <div className="col-span-1">Op</div>
                <div className="col-span-3">Entity</div>
                <div className="col-span-5">Audit Details</div>
@@ -213,7 +213,7 @@ export default function AuditLogsPage() {
                               <span className="font-bold text-foreground text-xs">{log.actor_name || 'System'}</span>
                               <Badge className="text-[7px] px-1 py-0 font-bold h-3.5 uppercase bg-primary/5 text-primary border-primary/10">{log.project_name || 'System'}</Badge>
                            </div>
-                           <div className="text-[9px] font-mono text-muted-foreground/40 mt-0.5 truncate">
+                           <div className="text-xs font-mono text-muted-foreground/40 mt-0.5 truncate">
                               {log.actor_email || 'internal'}
                            </div>
                         </div>
@@ -227,12 +227,12 @@ export default function AuditLogsPage() {
                            {log.metadata && (
                               <div className="flex flex-wrap gap-1.5">
                                  {log.metadata.key && (
-                                    <div className="flex items-center gap-1.5 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest">
+                                    <div className="flex items-center gap-1.5 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-widest">
                                        <Key size={10} /> {log.metadata.key}
                                     </div>
                                  )}
                                  {log.metadata.env && (
-                                    <div className="flex items-center gap-1.5 bg-muted/30 text-muted-foreground border border-border px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest leading-none">
+                                    <div className="flex items-center gap-1.5 bg-muted/30 text-muted-foreground border border-border px-2 py-0.5 rounded text-xs font-bold uppercase tracking-widest leading-none">
                                        <Globe size={10} /> {log.metadata.env}
                                     </div>
                                  )}
@@ -246,7 +246,7 @@ export default function AuditLogsPage() {
                            <div className="text-[11px] font-bold text-foreground">
                               {new Date(log.created_at).toLocaleDateString()}
                            </div>
-                           <div className="text-[9px] font-mono text-muted-foreground/30">
+                           <div className="text-xs font-mono text-muted-foreground/30">
                               {new Date(log.created_at).toLocaleTimeString()}
                            </div>
                         </div>
@@ -258,7 +258,7 @@ export default function AuditLogsPage() {
         </div>
         
         <div className="p-5 bg-muted/5 flex justify-center border-t border-border">
-           <div className="flex items-center gap-3 text-[9px] font-bold text-muted-foreground/20 uppercase tracking-widest">
+           <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground/20 uppercase tracking-widest">
               Secured Lifecycle // Immutable
            </div>
         </div>

@@ -67,7 +67,7 @@ export default function PresetsPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-           <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-[9px] mb-1.5">
+           <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-xs mb-1.5">
              <Shield className="size-3" />
              Security Governance
            </div>
@@ -84,7 +84,7 @@ export default function PresetsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
          <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
             <div>
-               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Active Protocols</p>
+               <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Active Protocols</p>
                <h4 className="text-xl font-bold tracking-tight">{presets.length}</h4>
             </div>
             <div className="h-10 w-10 rounded-lg bg-primary/5 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -93,7 +93,7 @@ export default function PresetsPage() {
          </Card>
          <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
             <div>
-               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Structure</p>
+               <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Structure</p>
                <h4 className="text-xl font-bold tracking-tight">Granular RBAC</h4>
             </div>
              <div className="h-10 w-10 rounded-lg bg-emerald-500/5 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -102,7 +102,7 @@ export default function PresetsPage() {
          </Card>
          <Card className="p-5 rounded-xl bg-card border-border flex items-center justify-between group shadow-sm">
             <div>
-               <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Platform</p>
+               <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Platform</p>
                <h4 className="text-xl font-bold tracking-tight text-blue-500">V3.5 Standard</h4>
             </div>
             <div className="h-10 w-10 rounded-lg bg-blue-500/5 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -123,9 +123,9 @@ export default function PresetsPage() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="py-3 pl-6 text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[30%]">Protocol Identity</TableHead>
-                <TableHead className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[45%]">Cluster Clearance</TableHead>
-                <TableHead className="text-right pr-6 text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 w-[25%]">Actions</TableHead>
+                <TableHead className="py-3 pl-6 text-xs uppercase tracking-widest font-bold text-muted-foreground/60 w-[30%]">Protocol Identity</TableHead>
+                <TableHead className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60 w-[45%]">Cluster Clearance</TableHead>
+                <TableHead className="text-right pr-6 text-xs uppercase tracking-widest font-bold text-muted-foreground/60 w-[25%]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -159,7 +159,7 @@ export default function PresetsPage() {
                         {['dev', 'staging', 'prod'].map(env => (
                            <div 
                               key={env} 
-                              className={`px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest transition-all ${
+                              className={`px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-widest transition-all ${
                                  preset.environments.includes(env) 
                                     ? 'bg-primary/5 text-primary border border-primary/10 shadow-sm' 
                                     : 'bg-muted/10 text-muted-foreground/20 border border-transparent'
@@ -199,7 +199,7 @@ export default function PresetsPage() {
             
             <form id="preset-form" onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="p-name" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Tag Name</Label>
+                <Label htmlFor="p-name" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Tag Name</Label>
                 <Input
                   id="p-name"
                   placeholder="e.g. Senior Backend Engineer"
@@ -210,7 +210,7 @@ export default function PresetsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="p-desc" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
+                <Label htmlFor="p-desc" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Description</Label>
                 <Textarea
                   id="p-desc"
                   placeholder="What is this tag for?"
@@ -221,7 +221,7 @@ export default function PresetsPage() {
               </div>
               
               <div className="space-y-2">
-                 <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Default Clearances</Label>
+                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Default Clearances</Label>
                  <div className="flex gap-2">
                     {['dev', 'staging', 'prod'].map(env => (
                        <button
@@ -234,7 +234,7 @@ export default function PresetsPage() {
                                 setNewPreset({ ...newPreset, environments: [...newPreset.environments, env] });
                              }
                           }}
-                          className={`flex-1 h-9 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${
+                          className={`flex-1 h-9 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
                              newPreset.environments.includes(env)
                                 ? 'bg-primary text-primary-foreground shadow-md'
                                 : 'bg-muted/50 text-muted-foreground border border-border'

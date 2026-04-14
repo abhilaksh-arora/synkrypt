@@ -197,6 +197,7 @@ Synkrypt is designed for high-availability production environments. We provide p
 
 1. **Backend**: Use `ecosystem.config.js` to manage the process via PM2.
 2. **Reverse Proxy**: Use the provided `Caddyfile` for automated SSL and API routing.
+3. **Automated Updates**: Use the included `deploy.sh` script to pull changes, rebuild, and restart the server in one command.
 
 For a detailed step-by-step guide, see our [Production Deployment Guide](docs/deployment.md).
 

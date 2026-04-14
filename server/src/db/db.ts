@@ -1,9 +1,11 @@
-import { Pool } from 'pg';
-import crypto from 'crypto';
-import logger from '../utils/logger';
+import { Pool } from "pg";
+import crypto from "crypto";
+import logger from "../utils/logger";
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/synkrypt',
+  connectionString:
+    process.env.DATABASE_URL ||
+    "postgresql://postgres:postgres@localhost:5432/synkrypt",
 });
 
 export const query = async (text: string, params?: any[]) => {
@@ -11,22 +13,31 @@ export const query = async (text: string, params?: any[]) => {
   try {
     const res = await pool.query(text, params);
     const duration = Number(process.hrtime.bigint() - start) / 1_000_000;
-    
+
     if (duration > 100) {
-      logger.warn({ durationMs: duration.toFixed(2), query: text.substring(0, 100) }, 'Slow query detected');
+      logger.warn(
+        { durationMs: duration.toFixed(2), query: text.substring(0, 100) },
+        "Slow query detected",
+      );
     } else {
-      logger.debug({ durationMs: duration.toFixed(2), query: text.substring(0, 50) }, 'Database query executed');
+      logger.debug(
+        { durationMs: duration.toFixed(2), query: text.substring(0, 50) },
+        "Database query executed",
+      );
     }
-    
+
     return res;
   } catch (err: any) {
-    logger.error({ err: err.message, query: text.substring(0, 100) }, 'Database query failed');
+    logger.error(
+      { err: err.message, query: text.substring(0, 100) },
+      "Database query failed",
+    );
     throw err;
   }
 };
 
 export function hashSessionToken(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex');
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 export const logAudit = async (
@@ -39,9 +50,9 @@ export const logAudit = async (
   (async () => {
     try {
       const details =
-        typeof metadata?.details === 'string'
+        typeof metadata?.details === "string"
           ? metadata.details
-          : typeof metadata?.key === 'string'
+          : typeof metadata?.key === "string"
             ? metadata.key
             : null;
 
@@ -49,10 +60,16 @@ export const logAudit = async (
         `INSERT INTO audit_logs 
          (user_id, project_id, action, details, metadata) 
          VALUES ($1, $2, $3, $4, $5)`,
-        [userId, projectId, action, details, metadata ? JSON.stringify(metadata) : null]
+        [
+          userId,
+          projectId,
+          action,
+          details,
+          metadata ? JSON.stringify(metadata) : null,
+        ],
       );
     } catch (err) {
-      console.error('Audit log background task failed:', err);
+      console.error("Audit log background task failed:", err);
     }
   })();
 };

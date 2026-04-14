@@ -26,13 +26,6 @@ export const profilerMiddleware = (req: Request, res: Response, next: NextFuncti
     const profiler = res.locals.profiler as ProfilerData;
     const dbTimeMs = Number(profiler.dbTime) / 1_000_000;
 
-    // Set Server-Timing headers
-    const timings = [
-      `total;dur=${durationMs.toFixed(2)}`,
-      `db;dur=${dbTimeMs.toFixed(2)}`
-    ];
-    res.setHeader('Server-Timing', timings.join(', '));
-
     // Log the request summary
     logger.info({
       method: req.method,

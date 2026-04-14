@@ -24,9 +24,15 @@ function rmrf(target: string) {
 }
 
 function run(cmd: string, args: string[], cwd: string) {
-  const child = Bun.spawnSync([cmd, ...args], { cwd, stdout: "inherit", stderr: "inherit" });
+  const child = Bun.spawnSync([cmd, ...args], {
+    cwd,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
   if (child.exitCode !== 0) {
-    throw new Error(`Command failed (${child.exitCode}): ${cmd} ${args.join(" ")}`);
+    throw new Error(
+      `Command failed (${child.exitCode}): ${cmd} ${args.join(" ")}`,
+    );
   }
 }
 
@@ -83,7 +89,9 @@ function main() {
 
   const assets = inferAssets(binDir);
   if (assets.length === 0) {
-    console.error(`No binaries found in ${binDir}. Expected files like synkrypt-linux-x64.`);
+    console.error(
+      `No binaries found in ${binDir}. Expected files like synkrypt-linux-x64.`,
+    );
     process.exit(1);
   }
 
@@ -98,9 +106,8 @@ function main() {
   fs.writeFileSync(path.join(outDir, "SHA256SUMS.txt"), sums.join("\n") + "\n");
   rmrf(tmpRoot);
 
-  console.log(`✅ Wrote ${assets.length} release archive(s) to ${outDir}`);
-  console.log(`✅ Wrote checksums to ${path.join(outDir, "SHA256SUMS.txt")}`);
+  console.log(`Wrote ${assets.length} release archive(s) to ${outDir}`);
+  console.log(`Wrote checksums to ${path.join(outDir, "SHA256SUMS.txt")}`);
 }
 
 main();
-

@@ -909,15 +909,22 @@ export default function ProjectDetailPage() {
             </DialogHeader>
             <form id="clearance-form" onSubmit={handleUpdateClearance} className="space-y-5">
               <div className="space-y-3">
-                 {['dev', 'staging', 'prod'].map(cluster => (
-                  <div key={cluster} className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer group shadow-sm ${clearanceEnvs.includes(cluster) ? 'bg-primary/[0.03] border-primary/20' : 'bg-muted/5 border-border opacity-60 hover:opacity-100'}`} onClick={() => { if (clearanceEnvs.includes(cluster)) setClearanceEnvs(p => p.filter(e => e !== cluster)); else setClearanceEnvs(p => [...p, cluster]); }}>
-                    <div className="flex items-center gap-4">
-                       <div className={`h-10 w-10 rounded-lg flex items-center justify-center font-bold text-[10px] uppercase transition-all ${clearanceEnvs.includes(cluster) ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground'}`}>{cluster.charAt(0)}</div>
-                       <div className="font-bold text-sm uppercase tracking-widest">{cluster} Environment</div>
+                 {['dev', 'staging', 'prod'].map(cluster => {
+                  const isChecked = clearanceEnvs.includes(cluster);
+                  const toggle = () => {
+                    if (isChecked) setClearanceEnvs(p => p.filter(e => e !== cluster));
+                    else setClearanceEnvs(p => [...p, cluster]);
+                  };
+                  return (
+                    <div key={cluster} className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer group shadow-sm ${isChecked ? 'bg-primary/[0.03] border-primary/20' : 'bg-muted/5 border-border opacity-60 hover:opacity-100'}`} onClick={toggle}>
+                      <div className="flex items-center gap-4">
+                         <div className={`h-10 w-10 rounded-lg flex items-center justify-center font-bold text-[10px] uppercase transition-all ${isChecked ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground'}`}>{cluster.charAt(0)}</div>
+                         <div className="font-bold text-sm uppercase tracking-widest">{cluster} Environment</div>
+                      </div>
+                      <Switch checked={isChecked} onCheckedChange={toggle} />
                     </div>
-                    <Switch checked={clearanceEnvs.includes(cluster)} onCheckedChange={() => {}} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
                <div className="space-y-2">
                   <Label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50 ml-1">Access Expiration (TTL)</Label>

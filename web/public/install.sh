@@ -50,8 +50,8 @@ case "${ARCH}" in
         ;;
 esac
 
-BINARY_NAME="synkrypt-${OS_NAME}-${ARCH_NAME}"
-DOWNLOAD_URL="https://github.com/abhilaksh-arora/synkrypt/releases/latest/download/${BINARY_NAME}"
+ARCHIVE_NAME="synkrypt-${OS_NAME}-${ARCH_NAME}.tar.gz"
+DOWNLOAD_URL="https://github.com/abhilaksh-arora/synkrypt/releases/latest/download/${ARCHIVE_NAME}"
 
 # 2. Preparation
 TMP_DIR=$(mktemp -d)
@@ -60,12 +60,15 @@ cd "${TMP_DIR}"
 echo -e "📦 Downloading Synkrypt for ${OS_NAME} (${ARCH_NAME})..."
 
 # 3. Download
-if ! curl -fsSL -o synkrypt "${DOWNLOAD_URL}"; then
+if ! curl -fsSL -o synkrypt.tar.gz "${DOWNLOAD_URL}"; then
     echo -e "${RED}Error: Download failed. The binary might not be released yet.${NC}"
     echo -e "Visit: https://github.com/abhilaksh-arora/synkrypt/releases"
     exit 1
 fi
 
+echo -e "📦 Extracting Synkrypt..."
+tar -xzf synkrypt.tar.gz
+rm synkrypt.tar.gz
 chmod +x synkrypt
 
 # 4. Install

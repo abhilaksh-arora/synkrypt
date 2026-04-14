@@ -62,7 +62,7 @@ echo -e "📦 Downloading Synkrypt for ${OS_NAME} (${ARCH_NAME})..."
 # 3. Download
 if ! curl -fsSL -o synkrypt "${DOWNLOAD_URL}"; then
     echo -e "${RED}Error: Download failed. The binary might not be released yet.${NC}"
-    echo -e "Visit: https://github.com/abhilaksh/synkrypt/releases"
+    echo -e "Visit: https://github.com/abhilaksh-arora/synkrypt/releases"
     exit 1
 fi
 

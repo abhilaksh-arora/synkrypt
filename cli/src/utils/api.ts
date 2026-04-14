@@ -1,6 +1,6 @@
 // Central wrapper for all server logic
 const BASE_URL =
-  process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
+  process.env.SYNKRYPT_SERVER_URL || "https://synkrypt.abhilaksharora.com";
 
 import { getSession } from "./config";
 

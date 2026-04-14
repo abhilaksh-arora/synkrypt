@@ -97,6 +97,18 @@ Accessible at `http://localhost:5173`. Create your admin account to get started.
 
 ### Installation
 
+#### 📦 One-Line Global Install (Recommended)
+Install the Synkrypt CLI globally with a single command:
+
+```bash
+curl -fsSL https://synkrypt.abhilaksharora.com/install.sh | bash
+```
+
+*Note: This downloads a standalone binary. No Node.js or Bun required on the client machine.*
+
+#### 🛠️ Local Development (Using Bun)
+If you prefer to run from source:
+
 ```bash
 cd cli
 bun link

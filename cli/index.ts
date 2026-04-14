@@ -39,7 +39,7 @@ program
     try {
       // Login ignores normal session fetching, so we intercept the Set-Cookie token
       const BASE_URL =
-        process.env.SYNKRYPT_SERVER_URL || "http://localhost:2809";
+        process.env.SYNKRYPT_SERVER_URL || "https://synkrypt.abhilaksharora.com";
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

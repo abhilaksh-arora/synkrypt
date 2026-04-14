@@ -24,14 +24,14 @@ export default function DashboardPage() {
   const [newProject, setNewProject] = useState({ name: '', description: '', github_repo: '' });
   const [creating, setCreating] = useState(false);
 
-  const canCreateProject = currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.role === 'admin';
+  const canCreateProject = currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.isAdmin;
 
   useEffect(() => {
     loadProjects();
   }, [currentOrg]);
 
   const loadProjects = async () => {
-    if (!currentOrg && user?.role !== 'admin') {
+    if (!currentOrg && user?.isAdmin !== true) {
       setProjects([]);
       setLoading(false);
       return;
@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentOrg && user?.role !== 'admin') return;
+    if (!currentOrg && user?.isAdmin !== true) return;
     setCreating(true);
     try {
       await api.createProject(newProject, currentOrg?.id);
@@ -101,10 +101,10 @@ export default function DashboardPage() {
             <Card className="col-span-full py-20 rounded-3xl bg-muted/5 border-dashed border-border flex flex-col items-center justify-center text-center">
                <ShieldAlert className="size-16 text-muted-foreground/20 mb-6" />
                <h3 className="text-2xl font-bold tracking-tight mb-2">
-                 {!currentOrg && user?.role !== 'admin' ? "No Team Selected" : "No Active Projects"}
+                 {!currentOrg && !user?.isAdmin ? "No Team Selected" : "No Active Projects"}
                </h3>
                <p className="text-muted-foreground max-w-sm mb-8">
-                  {!currentOrg && user?.role !== 'admin' 
+                  {!currentOrg && !user?.isAdmin 
                     ? "Please select or create a team to start managing projects." 
                     : "You haven't created any projects yet. Get started by initializing your first environment."}
                </p>

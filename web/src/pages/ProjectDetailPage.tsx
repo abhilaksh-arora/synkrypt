@@ -93,7 +93,7 @@ export default function ProjectDetailPage() {
       const sData = await api.listSecrets(id!, env) as any;
       setSecrets(sData.secrets);
 
-      const isOrgAdmin = currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.role === 'admin';
+      const isOrgAdmin = currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.isAdmin;
 
       if (isOrgAdmin && currentOrg) {
         const uData = await api.getOrg(currentOrg.id);
@@ -248,7 +248,7 @@ export default function ProjectDetailPage() {
   };
 
   const handleDeleteProject = async () => {
-    const isOwner = currentOrgRole === 'owner' || user?.role === 'admin';
+    const isOwner = currentOrgRole === 'owner' || user?.isAdmin;
     if (!isOwner) {
        toast({ title: "Access Denied", description: "Only organization owners can delete projects.", variant: "destructive" });
        return;
@@ -389,7 +389,7 @@ export default function ProjectDetailPage() {
                  <TabsTrigger value="prod" className="rounded-lg px-4 py-2 font-bold text-sm uppercase tracking-widest transition-all">Prod</TabsTrigger>
                </TabsList>
              </Tabs>
-             {(currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.role === 'admin') && (
+             {(currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.isAdmin) && (
                <div className="flex flex-wrap gap-3 lg:justify-end">
                  <Button onClick={() => setIsAddOpen(true)} className="h-10 rounded-xl px-5 font-bold shadow-sm group text-sm">
                    <PlusIcon className="mr-2 size-4 group-hover:rotate-90 transition-transform" /> Add Secret

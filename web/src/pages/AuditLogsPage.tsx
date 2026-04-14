@@ -39,7 +39,7 @@ export default function AuditLogsPage() {
     try {
       const pData = await api.listProjects();
       setProjects(pData.projects || []);
-      if (user?.role === 'admin') {
+      if (user?.isAdmin) {
         const uData = await api.listUsers();
         setUsers(uData.users || []);
       }
@@ -148,7 +148,7 @@ export default function AuditLogsPage() {
             </SelectContent>
          </Select>
 
-         {user?.role === 'admin' && (
+         {user?.isAdmin && (
             <Select value={filters.userId} onValueChange={v => setFilters({...filters, userId: v})}>
                <SelectTrigger className="w-[180px] h-9 rounded-lg bg-background border-border font-bold text-sm uppercase tracking-widest">
                   <div className="flex items-center gap-2"><UserIcon size={13} /> <SelectValue placeholder="Users" /></div>

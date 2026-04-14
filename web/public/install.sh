@@ -51,7 +51,7 @@ case "${ARCH}" in
 esac
 
 BINARY_NAME="synkrypt-${OS_NAME}-${ARCH_NAME}"
-DOWNLOAD_URL="https://github.com/abhilaksh/synkrypt/releases/latest/download/${BINARY_NAME}"
+DOWNLOAD_URL="https://github.com/abhilaksh-arora/synkrypt/releases/latest/download/${BINARY_NAME}"
 
 # 2. Preparation
 TMP_DIR=$(mktemp -d)

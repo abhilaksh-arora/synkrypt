@@ -41,7 +41,7 @@ program
       // Login ignores normal session fetching, so we intercept the Set-Cookie token
       const BASE_URL =
         process.env.SYNKRYPT_SERVER_URL ||
-        "https://synkrypt.abhilaksharora.com";
+        "https://synkrypt.abhilaksharora.com/api";
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,6 +112,67 @@ program
       );
     } catch (err: any) {
       console.error(` Failed to pull secrets: ${err.message}`);
+    }
+  });
+
+program
+  .command("push [file]")
+  .description("Push local variables into a Synkrypt project environment")
+  .requiredOption("-e, --env <env>", "Environment (dev, staging, prod)")
+  .option("-p, --personal", "Push as personal secrets (only visible to you)")
+  .action(async (file, options) => {
+    assertEnvironment(options.env);
+    const config = requireProjectConfig();
+    const filePath = file || ".env";
+
+    if (!fs.existsSync(filePath)) {
+      console.error(` Error: File ${filePath} not found.`);
+      process.exit(1);
+    }
+
+    try {
+      const content = fs.readFileSync(filePath, "utf8");
+      const lines = content.split(/\r?\n/);
+      const secrets: { key: string; value: string; type: string }[] = [];
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+
+        const match = trimmed.match(/^([^=]+)=(.*)$/);
+        if (!match || !match[1]) continue;
+
+        const key = match[1].trim();
+        let value = (match[2] || "").trim();
+
+        // Strip quotes if present
+        if (
+          (value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))
+        ) {
+          value = value.slice(1, -1);
+        }
+
+        secrets.push({ key, value, type: "env" });
+      }
+
+      if (secrets.length === 0) {
+        console.log(" No valid environment variables found to push.");
+        return;
+      }
+
+      const data = (await api.getProjectByKey(config.projectKey)) as any;
+      await api.bulkUpsertSecrets(data.project.id, {
+        environment: options.env,
+        secrets,
+        isPersonal: !!options.personal,
+      });
+
+      console.log(
+        ` Successfully pushed ${secrets.length} secrets to '${options.env}' environment.`,
+      );
+    } catch (err: any) {
+      console.error(` Failed to push secrets: ${err.message}`);
     }
   });
 

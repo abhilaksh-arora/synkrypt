@@ -39,6 +39,7 @@ The primary interface for engineering teams. Seamlessly transition from developm
 - `synkrypt login`: Securely authenticate your local machine.
 - `synkrypt run`: Execute any command with injected environment variables.
 - `synkrypt pull`: Safely sync viewable variables to a local `.env` file.
+- `synkrypt push`: Bulk upload local variables to a project environment.
 
 ### Sub-millisecond Performance
 
@@ -98,15 +99,17 @@ Accessible at `http://localhost:5173`. Create your admin account to get started.
 ### Installation
 
 #### One-Line Global Install (Recommended)
+
 Install the Synkrypt CLI globally with a single command:
 
 ```bash
 curl -fsSL https://synkrypt.abhilaksharora.com/install.sh | bash
 ```
 
-*Note: This downloads a standalone binary. No Node.js or Bun required on the client machine.*
+_Note: This downloads a standalone binary. No Node.js or Bun required on the client machine._
 
 #### Install From GitHub Releases
+
 Download the correct `synkrypt-<os>-<arch>.tar.gz` asset from the release and place it on your `PATH`.
 
 macOS example (Apple Silicon):
@@ -133,6 +136,7 @@ shasum -a 256 -c SHA256SUMS.txt
 ```
 
 #### Local Development (Using Bun)
+
 If you prefer to run from source:
 
 ```bash
@@ -154,6 +158,22 @@ synkrypt use <project-key>
 
 > [!TIP]
 > **Team Collaboration**: Synkrypt supports checking the `.synkrypt/config.json` file into version control. This allows your team to sync project links automatically—anyone who clones the repo can immediately run `synkrypt run` without manual setup.
+
+### Sync Secrets (.env)
+
+#### Pull
+```bash
+synkrypt pull --env dev
+```
+
+#### Push
+```bash
+# Push local .env to staging
+synkrypt push --env staging
+
+# Push personal secrets (private scope)
+synkrypt push .env.personal --env dev --personal
+```
 
 ### Run with Secrets
 
@@ -190,12 +210,19 @@ For a detailed step-by-step guide, see our [Production Deployment Guide](docs/de
 
 ## Development & Releasing
 
-To package new versions of the CLI for distribution:
+To package and release new versions of the CLI to GitHub:
 
-1. **Compile**: `cd cli && bun run compile:all`
-2. **Archive**: `cd cli && bun run release:assets`
-3. **Draft Release**: `gh release create v0.1.0 --title "v0.1.0" --notes "Synkrypt CLI binaries"`
-4. **Upload Assets**: `gh release upload v0.1.0 cli/release/* --clobber`
+```bash
+cd cli
+bun run publish
+```
+
+This automated script will:
+1. Increment the version in `package.json`.
+2. Compile binaries for all supported platforms.
+3. Package assets and generate checksums.
+4. Create a new GitHub Release with the correct tag.
+5. Upload all assets to the release automatically.
 
 ## License
 

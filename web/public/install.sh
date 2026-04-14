@@ -57,7 +57,7 @@ DOWNLOAD_URL="https://github.com/abhilaksh-arora/synkrypt/releases/latest/downlo
 TMP_DIR=$(mktemp -d)
 cd "${TMP_DIR}"
 
-echo -e "📦 Downloading Synkrypt for ${OS_NAME} (${ARCH_NAME})..."
+echo -e "Downloading Synkrypt for ${OS_NAME} (${ARCH_NAME})..."
 
 # 3. Download
 if ! curl -fsSL -o synkrypt.tar.gz "${DOWNLOAD_URL}"; then
@@ -66,13 +66,13 @@ if ! curl -fsSL -o synkrypt.tar.gz "${DOWNLOAD_URL}"; then
     exit 1
 fi
 
-echo -e "📦 Extracting Synkrypt..."
+echo -e "Extracting Synkrypt..."
 tar -xzf synkrypt.tar.gz
 rm synkrypt.tar.gz
 chmod +x synkrypt
 
 # 4. Install
-echo -e "🚀 Installing to /usr/local/bin..."
+echo -e "Installing to /usr/local/bin..."
 if [ -w /usr/local/bin ]; then
     mv synkrypt /usr/local/bin/synkrypt
 else

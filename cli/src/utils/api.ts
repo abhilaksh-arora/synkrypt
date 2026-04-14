@@ -1,6 +1,6 @@
 // Central wrapper for all server logic
 const BASE_URL =
-  process.env.SYNKRYPT_SERVER_URL || "https://synkrypt.abhilaksharora.com";
+  process.env.SYNKRYPT_SERVER_URL || "https://synkrypt.abhilaksharora.com/api";
 
 import { getSession } from "./config";
 
@@ -45,5 +45,7 @@ export const api = {
     request("GET", `/projects/${projectId}/secrets/pull?env=${env}`),
   runSecrets: (projectId: string, env: string) =>
     request("GET", `/projects/${projectId}/secrets/run?env=${env}`),
+  bulkUpsertSecrets: (projectId: string, body: any) =>
+    request("POST", `/projects/${projectId}/secrets/bulk`, body),
   getMe: () => request("GET", "/auth/me"),
 };

@@ -57,6 +57,7 @@ export const api = {
 
   // Users & Team Management
   listUsers: () => request("GET", "/users"),
+  searchUsers: (query: string) => request("GET", `/users/search?query=${query}`),
   createUser: (body: any) => request("POST", "/users", body),
   deleteUser: (id: string) => request("DELETE", `/users/${id}`),
   revokeAllAccess: (id: string) => request("POST", `/users/${id}/revoke`),
@@ -76,9 +77,9 @@ export const api = {
   listUserAssets: (uid: string) => request("GET", `/user-assets/user/${uid}`),
 
   // Projects
-  listProjects: () => request("GET", "/projects"),
-  createProject: (body: any) =>
-    request("POST", "/projects", body),
+  listProjects: (orgId?: string) => request("GET", orgId ? `/orgs/${orgId}/projects` : "/projects"),
+  createProject: (body: any, orgId?: string) =>
+    request("POST", orgId ? `/orgs/${orgId}/projects` : "/projects", body),
   getProject: (id: string) => request("GET", `/projects/${id}`),
   updateProject: (id: string, body: any) =>
     request("PUT", `/projects/${id}`, body),
@@ -109,6 +110,14 @@ export const api = {
   updateSecretVisibility: (projectId: string, secretId: string, canView: boolean) => 
     request("PATCH", `/projects/${projectId}/secrets/${secretId}/visibility`, { can_view: canView }),
   
+  // Organizations
+  listOrgs: () => request("GET", "/orgs"),
+  createOrg: (body: any) => request("POST", "/orgs", body),
+  getOrg: (id: string) => request("GET", `/orgs/${id}`),
+  deleteOrg: (id: string) => request("DELETE", `/orgs/${id}`),
+  addOrgMember: (id: string, body: any) => request("POST", `/orgs/${id}/members`, body),
+  removeOrgMember: (id: string, uid: string) => request("DELETE", `/orgs/${id}/members/${uid}`),
+
   // Custom request
   request: (method: string, path: string, body?: any) => request(method, path, body),
 };

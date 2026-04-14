@@ -7,6 +7,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../context/AuthContext';
+import { useOrg } from '../context/OrgContext';
 import { api } from '../api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { currentOrg, currentOrgRole } = useOrg();
   const { toast } = useToast();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,13 +24,21 @@ export default function DashboardPage() {
   const [newProject, setNewProject] = useState({ name: '', description: '', github_repo: '' });
   const [creating, setCreating] = useState(false);
 
+  const canCreateProject = currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.role === 'admin';
+
   useEffect(() => {
     loadProjects();
-  }, []);
+  }, [currentOrg]);
 
   const loadProjects = async () => {
+    if (!currentOrg && user?.role !== 'admin') {
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await api.listProjects();
+      const data = await api.listProjects(currentOrg?.id);
       setProjects(data.projects || []);
     } catch (err) {
       console.error(err);
@@ -39,9 +49,10 @@ export default function DashboardPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentOrg && user?.role !== 'admin') return;
     setCreating(true);
     try {
-      await api.createProject(newProject);
+      await api.createProject(newProject, currentOrg?.id);
       await loadProjects();
       setIsCreateOpen(false);
       setNewProject({ name: '', description: '', github_repo: '' });
@@ -71,7 +82,11 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="pt-2">
-           <Button onClick={() => setIsCreateOpen(true)} className="h-10 rounded-xl px-5 text-sm font-bold shadow-sm hover:translate-y-[-1px] transition-all group">
+           <Button 
+            onClick={() => setIsCreateOpen(true)} 
+            disabled={!canCreateProject}
+            className="h-10 rounded-xl px-5 text-sm font-bold shadow-sm hover:translate-y-[-1px] transition-all group"
+           >
              <PlusIcon className="mr-2 size-4 group-hover:rotate-90 transition-transform" /> Create Project
            </Button>
         </div>
@@ -83,16 +98,22 @@ export default function DashboardPage() {
              <Card key={i} className="h-64 rounded-3xl bg-card border-border animate-pulse" />
            ))
          ) : projects.length === 0 ? (
-           <Card className="col-span-full py-20 rounded-3xl bg-muted/5 border-dashed border-border flex flex-col items-center justify-center text-center">
-              <ShieldAlert className="size-16 text-muted-foreground/20 mb-6" />
-              <h3 className="text-2xl font-bold tracking-tight mb-2">No Active Projects</h3>
-              <p className="text-muted-foreground max-w-sm mb-8">
-                 You haven't created any projects yet. Get started by initializing your first environment.
-              </p>
-              <Button onClick={() => setIsCreateOpen(true)} variant="outline" className="rounded-xl h-12 px-8 font-bold">
-                 Create First Project
-              </Button>
-           </Card>
+            <Card className="col-span-full py-20 rounded-3xl bg-muted/5 border-dashed border-border flex flex-col items-center justify-center text-center">
+               <ShieldAlert className="size-16 text-muted-foreground/20 mb-6" />
+               <h3 className="text-2xl font-bold tracking-tight mb-2">
+                 {!currentOrg && user?.role !== 'admin' ? "No Team Selected" : "No Active Projects"}
+               </h3>
+               <p className="text-muted-foreground max-w-sm mb-8">
+                  {!currentOrg && user?.role !== 'admin' 
+                    ? "Please select or create a team to start managing projects." 
+                    : "You haven't created any projects yet. Get started by initializing your first environment."}
+               </p>
+               {canCreateProject && projects.length === 0 && (
+                 <Button onClick={() => setIsCreateOpen(true)} variant="outline" className="rounded-xl h-12 px-8 font-bold">
+                    Create First Project
+                 </Button>
+               )}
+            </Card>
          ) : projects.map(project => (
             <Link key={project.id} to={`/projects/${project.id}`}>
               <Card className="p-6 h-full rounded-2xl bg-card border-border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-primary/30 transition-all group flex flex-col justify-between">

@@ -3,16 +3,17 @@ import {
   listOrgs, createOrg, getOrg, deleteOrg, addMember, removeMember
 } from '../controllers/organizationController';
 import { requireAuth, requireAdmin } from '../middleware/authMiddleware';
+import { requireOrgMember, requireOrgAdmin, requireOrgOwner } from '../middleware/orgMiddleware';
 import projectRoutes from './projectRoutes';
 
 const router = Router();
 
 router.get('/', requireAuth, listOrgs);
-router.post('/', requireAuth, requireAdmin, createOrg);
-router.get('/:id', requireAuth, getOrg);
-router.delete('/:id', requireAuth, requireAdmin, deleteOrg);
-router.post('/:id/members', requireAuth, requireAdmin, addMember);
-router.delete('/:id/members/:userId', requireAuth, requireAdmin, removeMember);
+router.post('/', requireAuth, createOrg);
+router.get('/:id', requireAuth, requireOrgMember, getOrg);
+router.delete('/:id', requireAuth, requireOrgOwner, deleteOrg);
+router.post('/:id/members', requireAuth, requireOrgAdmin, addMember);
+router.delete('/:id/members/:userId', requireAuth, requireOrgAdmin, removeMember);
 
 // Nest project routes under orgs
 router.use('/:orgId/projects', projectRoutes);

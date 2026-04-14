@@ -22,7 +22,10 @@ import {
   HardDrive,
   ChevronDown,
   ChevronUp,
+  UserCheck
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useOrg } from "../context/OrgContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -106,9 +109,12 @@ function MemberVaultCard({
           <div>
             <div className="font-semibold text-foreground text-sm flex items-center gap-1.5">
               {user.name}
-              {user.role === "admin" && (
+              {user.global_admin && (
                 <Crown className="size-3 text-amber-500" />
               )}
+              <Badge variant="outline" className="text-[9px] uppercase tracking-tighter px-1.5 h-4 border-primary/20 text-primary font-black">
+                {user.org_role}
+              </Badge>
             </div>
             <div className="text-sm font-mono text-muted-foreground/60 flex items-center gap-1 mt-0.5">
               <Mail className="size-2.5" /> {user.email}
@@ -209,6 +215,8 @@ function MemberVaultCard({
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function UsersPage() {
+  const { user: me } = useAuth();
+  const { currentOrg, currentOrgRole } = useOrg();
   const { toast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -224,7 +232,7 @@ export default function UsersPage() {
     email: "",
     name: "",
     password: "",
-    role: "developer",
+    org_role: "member" as const,
   });
   const [inviting, setInviting] = useState(false);
 
@@ -243,29 +251,26 @@ export default function UsersPage() {
   });
   const [issuing, setIssuing] = useState(false);
 
+  const isAdminOrOwner = currentOrgRole === 'owner' || currentOrgRole === 'admin' || me?.isAdmin;
+
   useEffect(() => {
-    loadUsers();
-    loadVault();
-  }, []);
+    if (currentOrg) {
+      loadUsers();
+    }
+  }, [currentOrg]);
 
   const loadUsers = async () => {
+    if (!currentOrg) return;
+    setLoading(true);
     try {
-      const data = await api.listUsers();
-      setUsers(data.users || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadVault = async () => {
-    setVaultLoading(true);
-    try {
-      const data = await api.listUsers();
-      const userList: any[] = data.users || [];
+      const data = await api.getOrg(currentOrg.id);
+      const members = data.members || [];
+      setUsers(members);
+      
+      // Load vault too
+      setVaultLoading(true);
       const enriched = await Promise.all(
-        userList.map(async (u) => {
+        members.map(async (u: any) => {
           try {
             const res = await api.listUserAssets(u.id);
             return { ...u, assets: res.assets || [] };
@@ -278,26 +283,47 @@ export default function UsersPage() {
     } catch (err) {
       console.error(err);
     } finally {
+      setLoading(false);
       setVaultLoading(false);
     }
   };
 
+  // Deprecated loadVault (integrated into loadUsers)
+  const loadVault = async () => {};
+
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentOrg) return;
     setInviting(true);
     try {
-      await api.createUser(inviteForm);
+      // 1. Search if user exists
+      const searchRes = await api.searchUsers(inviteForm.email);
+      let targetUser = searchRes.users.find((u: any) => u.email === inviteForm.email);
+      
+      let userId = targetUser?.id;
+
+      // 2. Create if not exists (only global admins can do this, otherwise we expect existing user)
+      if (!userId) {
+        if (!me?.isAdmin) {
+           throw new Error("User with this email does not exist. Only global admins can create new accounts.");
+        }
+        const createRes = await api.createUser({ ...inviteForm });
+        userId = createRes.user.id;
+      }
+
+      // 3. Add to organization
+      await api.addOrgMember(currentOrg.id, { userId, role: inviteForm.org_role });
+      
       await loadUsers();
-      await loadVault();
       setIsInviteOpen(false);
-      setInviteForm({ email: "", name: "", password: "", role: "developer" });
+      setInviteForm({ email: "", name: "", password: "", org_role: "member" });
       toast({
-        title: "User Added",
-        description: `${inviteForm.name} has been added.`,
+        title: "Team Updated",
+        description: `${inviteForm.email} has been added to the organization.`,
       });
     } catch (err: any) {
       toast({
-        title: "Error",
+        title: "Action Failed",
         description: err.message,
         variant: "destructive",
       });
@@ -341,12 +367,11 @@ export default function UsersPage() {
   };
 
   const handleDeleteUser = async (uid: string) => {
-    if (!confirm("Delete this user? This cannot be undone.")) return;
+    if (!currentOrg || !confirm("Remove this member from the team?")) return;
     try {
-      await api.deleteUser(uid);
+      await api.removeOrgMember(currentOrg.id, uid);
       await loadUsers();
-      await loadVault();
-      toast({ title: "User Deleted" });
+      toast({ title: "Member Removed" });
     } catch (err) {
       console.error(err);
     }
@@ -440,6 +465,7 @@ export default function UsersPage() {
         </div>
         <Button
           onClick={() => setIsInviteOpen(true)}
+          disabled={!isAdminOrOwner}
           className="rounded-lg px-5 h-9 text-sm font-semibold shadow-sm hover:translate-y-[-1px] transition-all"
         >
           <UserPlus className="mr-1.5 size-4" /> Add Team Member
@@ -566,18 +592,18 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1.5 py-1">
-                          {u.role === "admin" ? (
+                          {u.org_role === "owner" ? (
                             <div className="flex items-center gap-1 bg-amber-500/5 text-amber-600 border border-amber-500/10 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest">
-                              <ShieldCheck className="size-2" /> Admin Root
+                              <Crown className="size-2" /> Owner
                             </div>
-                          ) : u.projects?.length > 0 ? (
-                            u.projects.map((p: any) => (
-                              <div key={p.id} className="bg-background border border-border px-1.5 py-0.5 rounded shadow-sm text-sm font-semibold">
-                                {p.name}
-                              </div>
-                            ))
+                          ) : u.org_role === "admin" ? (
+                             <div className="flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest">
+                               <ShieldCheck className="size-2" /> Org Admin
+                             </div>
                           ) : (
-                            <div className="text-xs font-medium text-muted-foreground/30 italic">No assigned projects</div>
+                             <div className="flex items-center gap-1 bg-muted/5 text-muted-foreground border border-border px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest">
+                               <UserCheck className="size-2" /> Member
+                             </div>
                           )}
                         </div>
                       </TableCell>
@@ -599,7 +625,7 @@ export default function UsersPage() {
                             size="icon"
                             className="h-7 w-7 text-muted-foreground/30 hover:text-destructive"
                             onClick={() => handleDeleteUser(u.id)}
-                            disabled={u.email === "admin@example.com"}
+                            disabled={!isAdminOrOwner || u.id === me?.id || u.org_role === 'owner'}
                           >
                             <Trash2 size={12} />
                           </Button>
@@ -808,10 +834,14 @@ export default function UsersPage() {
                   <Input placeholder="John Doe" className="h-8 rounded-lg bg-muted/20 border-border text-xs" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} required />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground ml-1">Role</Label>
-                  <Select value={inviteForm.role} onValueChange={(v) => setInviteForm({ ...inviteForm, role: v })}>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground ml-1">Org Role</Label>
+                  <Select value={inviteForm.org_role} onValueChange={(v: any) => setInviteForm({ ...inviteForm, org_role: v })}>
                     <SelectTrigger className="h-8 rounded-lg bg-muted/20 border-border text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="developer">Developer</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent>
+                    <SelectContent>
+                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      {me?.isAdmin && <SelectItem value="owner">Owner</SelectItem>}
+                    </SelectContent>
                   </Select>
                 </div>
               </div>
@@ -820,8 +850,8 @@ export default function UsersPage() {
                 <Input type="email" placeholder="john@company.com" className="h-8 rounded-lg bg-muted/20 border-border text-xs" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} required />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-bold uppercase text-muted-foreground ml-1">Password</Label>
-                <Input type="password" placeholder="••••••••" className="h-8 rounded-lg bg-muted/20 border-border text-xs" value={inviteForm.password} onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })} required />
+                <Label className="text-xs font-bold uppercase text-muted-foreground ml-1">Password (New User Only)</Label>
+                <Input type="password" placeholder="••••••••" className="h-8 rounded-lg bg-muted/20 border-border text-xs" value={inviteForm.password} onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })} />
               </div>
             </form>
           </div>

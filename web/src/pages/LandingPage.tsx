@@ -8,7 +8,8 @@ import {
   Key,
   ShieldCheck,
   ArrowRight,
-  Book,
+  Globe,
+  BookOpen,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -30,27 +31,52 @@ export default function LandingPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm text-primary-foreground">
               <LockKeyhole className="h-5 w-5" />
             </div>
-            <span className="text-xl font-bold tracking-tighter text-foreground">
+            <span className="text-xl font-bold tracking-tighter text-black">
               Synk<span className="text-primary">rypt</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
-            {user ? (
-              <Button
-                onClick={() => navigate("/dashboard")}
-                className="rounded-full h-10 px-6 font-bold shadow-md hover:-translate-y-0.5 transition-all"
+          <div className="flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-6">
+              <a
+                href="/docs"
+                className="text-sm font-bold text-black hover:opacity-70 transition-all flex items-center gap-2"
               >
-                Go to Dashboard
-              </Button>
-            ) : (
-              <Button
-                onClick={() => navigate("/login")}
-                className="rounded-full h-10 px-6 font-bold shadow-md hover:-translate-y-0.5 transition-all"
+                <BookOpen className="size-5" />
+                Documentation
+              </a>
+            </nav>
+
+            <div className="flex items-center gap-4">
+              {user ? (
+                <Button
+                  onClick={() => navigate("/dashboard")}
+                  className="rounded-full h-10 px-6 font-bold shadow-md bg-primary text-white hover:opacity-90 transition-all"
+                >
+                  Go to Dashboard
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => navigate("/login")}
+                  className="rounded-full h-10 px-6 font-bold shadow-md bg-primary text-white hover:opacity-90 transition-all"
+                >
+                  Login / Start <ArrowRight className="ml-2 size-4" />
+                </Button>
+              )}
+
+              <div className="h-4 w-px bg-black/20 mx-1" />
+
+              <a
+                href="https://github.com/abhilaksh-arora/synkrypt"
+                target="_blank"
+                rel="noreferrer"
+                className="text-black hover:opacity-70 transition-all"
               >
-                Login / Start <ArrowRight className="ml-2 size-4" />
-              </Button>
-            )}
+                <svg viewBox="0 0 24 24" className="size-7 fill-current">
+                  <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </header>
@@ -84,34 +110,29 @@ export default function LandingPage() {
             store your plaintext secrets.
           </p>
 
-          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 w-full sm:w-auto">
-            <Button
-              onClick={() => navigate("/login")}
-              size="lg"
-              className="h-13 px-8 rounded-full text-sm font-bold shadow-xl hover:-translate-y-1 transition-all group"
-            >
-              Deploy Node{" "}
-              <ArrowRight className="ml-2 size-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-6 w-full sm:w-auto">
             <Button
               onClick={() => navigate("/docs")}
-              variant="outline"
               size="lg"
-              className="h-13 px-8 rounded-full text-sm font-bold bg-background shadow-sm hover:shadow-md hover:bg-muted/50 border-border group hover:-translate-y-1 transition-all"
+              className="h-14 px-10 rounded-full text-base font-bold bg-primary text-white shadow-xl hover:opacity-90 hover:-translate-y-1 transition-all group"
             >
-              <Book className="mr-2 size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              Read playbooks
+              <BookOpen className="size-8 mr-3" />
+              Read Documentation
             </Button>
             <Button
-              onClick={() => window.open('https://github.com/abhilaksh-arora/synkrypt', '_blank')}
-              variant="outline"
+              onClick={() =>
+                window.open(
+                  "https://github.com/abhilaksh-arora/synkrypt",
+                  "_blank",
+                )
+              }
               size="lg"
-              className="h-13 px-8 rounded-full text-sm font-bold shadow-sm hover:shadow-md bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800 hover:text-white group hover:-translate-y-1 transition-all"
+              className="h-14 px-10 rounded-full text-base font-bold shadow-xl bg-black text-white hover:bg-black/90 hover:-translate-y-1 transition-all group"
             >
-              <svg viewBox="0 0 24 24" className="size-4 mr-2" fill="currentColor">
-                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+              <svg viewBox="0 0 24 24" className="size-10 mr-3 fill-current">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
               </svg>
-              GitHub Source
+              Star on GitHub
             </Button>
           </div>
         </motion.div>
@@ -199,24 +220,45 @@ export default function LandingPage() {
               © {new Date().getFullYear()} Synkrypt. All rights reserved.
             </span>
             <div className="flex gap-6 mt-4 sm:mt-0">
-              <a href="#" className="hover:text-primary transition-colors">
-                Website
-              </a>
               <a
-                href="https://github.com/abhilaksh"
-                target="_blank"
-                rel="noreferrer"
+                href="https://abhilaksharora.com"
+                title="Website"
                 className="hover:text-primary transition-colors"
               >
-                GitHub
+                <Globe className="size-6" />
               </a>
               <a
-                href="https://linkedin.com/in/abhilaksharora"
+                href="https://abhilaksharora.com/github"
                 target="_blank"
                 rel="noreferrer"
+                title="GitHub"
                 className="hover:text-primary transition-colors"
               >
-                LinkedIn
+                <svg viewBox="0 0 24 24" className="size-6 fill-current">
+                  <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                </svg>
+              </a>
+              <a
+                href="https://abhilaksharora.com/linkedin"
+                target="_blank"
+                rel="noreferrer"
+                title="LinkedIn"
+                className="hover:text-primary transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="size-6 fill-current">
+                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a2.7 2.7 0 0 0-2.7-2.7c-1.2 0-2.3.7-2.8 1.7v-1.4h-2.1v7.7h2.1v-4.1c0-.4 0-.8.1-1.1.2-.5.7-1 1.4-1 1 0 1.4.8 1.4 2v4.2h2.2M7 10.1a1.1 1.1 0 0 0-1.2 1.1c0 .6.5 1.1 1.2 1.1s1.2-.5 1.2-1.1c0-.6-.5-1.1-1.2-1.1M5.9 18.5h2.2v-7.7H5.9v7.7z" />
+                </svg>
+              </a>
+              <a
+                href="https://abhilaksharora.com/x"
+                target="_blank"
+                rel="noreferrer"
+                title="X"
+                className="hover:text-primary transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="size-6 fill-current">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
               </a>
             </div>
           </div>

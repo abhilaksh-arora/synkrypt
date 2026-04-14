@@ -31,7 +31,7 @@ export const requireAuth = async (req: any, res: Response, next: NextFunction) =
 
   try {
     const result = await pool.query(
-      `SELECT s.user_id, u.email, u.name, u.role
+      `SELECT s.user_id, u.email, u.name, u.is_platform_admin
        FROM user_sessions s
        JOIN users u ON u.id = s.user_id
        WHERE s.token_hash = $1 AND s.expires_at > now()`,
@@ -53,7 +53,7 @@ export const requireAuth = async (req: any, res: Response, next: NextFunction) =
 };
 
 export const requireAdmin = (req: any, res: Response, next: NextFunction) => {
-  if (req.user?.role !== 'admin') {
+  if (!req.user?.is_platform_admin) {
     logger.warn({ user: req.user?.email, path: req.path }, 'Admin access requirement failed');
     return res.status(403).json({ error: 'Admin access required.' });
   }

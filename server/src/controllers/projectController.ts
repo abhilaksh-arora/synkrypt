@@ -4,7 +4,7 @@ import pool, { logAudit } from "../db/db";
 import logger from "../utils/logger";
 
 function generateProjectKey(): string {
-  return "pk_" + crypto.randomBytes(12).toString("hex");
+  return "sk_" + crypto.randomBytes(12).toString("hex");
 }
 
 function generateMasterKey(): string {
@@ -57,26 +57,52 @@ function sanitizeProject(project: any) {
 // GET /projects
 export const listProjects = async (req: any, res: Response) => {
   try {
+    const { orgId } = req.params;
     let result;
-    if (req.user.role === "admin") {
-      result = await pool.query(
-        `SELECT id, name, description, github_repo, project_key, created_by, created_at
-         FROM projects ORDER BY created_at ASC`,
-      );
+    if (req.user.is_platform_admin) {
+      if (orgId) {
+        result = await pool.query(
+          `SELECT id, name, description, github_repo, project_key, created_by, created_at, org_id
+           FROM projects WHERE org_id = $1 ORDER BY created_at ASC`,
+          [orgId]
+        );
+      } else {
+        result = await pool.query(
+          `SELECT id, name, description, github_repo, project_key, created_by, created_at, org_id
+           FROM projects ORDER BY created_at ASC`,
+        );
+      }
     } else {
-      result = await pool.query(
-        `SELECT p.id, p.name, p.description, p.github_repo, p.project_key, p.created_by, p.created_at
-         FROM projects p
-         JOIN project_members pm ON pm.project_id = p.id
-         WHERE pm.user_id = $1 AND (pm.expires_at IS NULL OR pm.expires_at > now())
-         ORDER BY p.created_at ASC`,
-        [req.user.id],
-      );
+      if (orgId) {
+        result = await pool.query(
+          `SELECT p.id, p.name, p.description, p.github_repo, p.project_key, p.created_by, p.created_at, p.org_id
+           FROM projects p
+           JOIN project_members pm ON pm.project_id = p.id
+           WHERE pm.user_id = $1 AND p.org_id = $2 AND (pm.expires_at IS NULL OR pm.expires_at > now())
+           ORDER BY p.created_at ASC`,
+          [req.user.id, orgId],
+        );
+      } else {
+        result = await pool.query(
+          `SELECT p.id, p.name, p.description, p.github_repo, p.project_key, p.created_by, p.created_at, p.org_id
+           FROM projects p
+           JOIN project_members pm ON pm.project_id = p.id
+           WHERE pm.user_id = $1 AND (pm.expires_at IS NULL OR pm.expires_at > now())
+           ORDER BY p.created_at ASC`,
+          [req.user.id],
+        );
+      }
     }
-    logger.debug({ userId: req.user.id, count: result.rows.length }, 'Projects listed');
+    logger.debug(
+      { userId: req.user.id, count: result.rows.length },
+      "Projects listed",
+    );
     res.json({ projects: result.rows.map(sanitizeProject) });
   } catch (err: any) {
-    logger.error({ err: err.message, userId: req.user.id }, 'Failed to list projects');
+    logger.error(
+      { err: err.message, userId: req.user.id },
+      "Failed to list projects",
+    );
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -86,17 +112,18 @@ export const createProject = async (req: any, res: Response) => {
   const { name, description, github_repo } = req.body;
   if (!name) return res.status(400).json({ error: "name is required." });
 
-  logger.info({ userId: req.user.id, name }, 'Creating new project');
+  logger.info({ userId: req.user.id, name }, "Creating new project");
 
   try {
     const project_key = generateProjectKey();
     const rawMasterKey = generateMasterKey();
     const master_key = encryptMasterKey(rawMasterKey);
 
+    const { orgId } = req.params;
     const result = await pool.query(
-      `INSERT INTO projects (name, description, github_repo, project_key, master_key, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, name, description, github_repo, project_key, created_by, created_at`,
+      `INSERT INTO projects (name, description, github_repo, project_key, master_key, created_by, org_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, name, description, github_repo, project_key, created_by, created_at, org_id`,
       [
         name,
         description ?? null,
@@ -104,6 +131,7 @@ export const createProject = async (req: any, res: Response) => {
         project_key,
         master_key,
         req.user.id,
+        orgId || null,
       ],
     );
 
@@ -112,15 +140,18 @@ export const createProject = async (req: any, res: Response) => {
     await pool.query(
       `INSERT INTO project_members (project_id, user_id, environments, preset_name)
        VALUES ($1, $2, $3, $4)`,
-      [project.id, req.user.id, ["dev", "staging", "prod"], 'Senior Developer'],
+      [project.id, req.user.id, ["dev", "staging", "prod"], "Senior Developer"],
     );
 
     logAudit(req.user.id, project.id, "project_create", { name: project.name });
-    logger.info({ userId: req.user.id, projectId: project.id, name: project.name }, 'Project created successfully');
-    
+    logger.info(
+      { userId: req.user.id, projectId: project.id, name: project.name },
+      "Project created successfully",
+    );
+
     res.status(201).json({ project: sanitizeProject(project) });
   } catch (err: any) {
-    logger.error({ err: err.message, name }, 'Project creation failed');
+    logger.error({ err: err.message, name }, "Project creation failed");
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -135,24 +166,30 @@ export const getProject = async (req: any, res: Response) => {
       [id],
     );
     if (!projectResult.rows.length) {
-      logger.warn({ projectId: id, userId: req.user.id }, 'Project lookup failed: Not found');
+      logger.warn(
+        { projectId: id, userId: req.user.id },
+        "Project lookup failed: Not found",
+      );
       return res.status(404).json({ error: "Project not found." });
     }
 
     const membersResult = await pool.query(
-      `SELECT u.id, u.email, u.name, u.role, pm.environments, pm.preset_name, pm.expires_at, pm.last_active_at
+      `SELECT u.id, u.email, u.name, u.is_platform_admin as global_admin, pm.environments, pm.preset_name, pm.expires_at, pm.last_active_at
        FROM project_members pm
        JOIN users u ON u.id = pm.user_id
        WHERE pm.project_id = $1`,
       [id],
     );
 
-    res.json({ 
-      project: sanitizeProject(projectResult.rows[0]), 
-      members: membersResult.rows 
+    res.json({
+      project: sanitizeProject(projectResult.rows[0]),
+      members: membersResult.rows,
     });
   } catch (err: any) {
-    logger.error({ err: err.message, projectId: id }, 'Failed to fetch project details');
+    logger.error(
+      { err: err.message, projectId: id },
+      "Failed to fetch project details",
+    );
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -162,6 +199,24 @@ export const updateProject = async (req: any, res: Response) => {
   const { id } = req.params;
   const { name, description, github_repo } = req.body;
   try {
+    const projectCheck = await pool.query(
+      "SELECT created_by FROM projects WHERE id = $1",
+      [id],
+    );
+    if (!projectCheck.rows.length)
+      return res.status(404).json({ error: "Project not found." });
+
+    if (
+      !req.user.is_platform_admin &&
+      projectCheck.rows[0].created_by !== req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({
+          error: "Only project owners or admins can update this project.",
+        });
+    }
+
     const result = await pool.query(
       `UPDATE projects SET
          name = COALESCE($1, name),
@@ -172,16 +227,16 @@ export const updateProject = async (req: any, res: Response) => {
       [name ?? null, description ?? null, github_repo ?? null, id],
     );
     if (!result.rows.length) {
-      logger.warn({ projectId: id }, 'Project update failed: Not found');
+      logger.warn({ projectId: id }, "Project update failed: Not found");
       return res.status(404).json({ error: "Project not found." });
     }
-    
+
     logAudit(req.user.id, id, "project_update", { projectId: id });
-    logger.info({ userId: req.user.id, projectId: id }, 'Project updated');
-    
+    logger.info({ userId: req.user.id, projectId: id }, "Project updated");
+
     res.json({ project: sanitizeProject(result.rows[0]) });
   } catch (err: any) {
-    logger.error({ err: err.message, projectId: id }, 'Project update error');
+    logger.error({ err: err.message, projectId: id }, "Project update error");
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -190,12 +245,33 @@ export const updateProject = async (req: any, res: Response) => {
 export const deleteProject = async (req: any, res: Response) => {
   const { id } = req.params;
   try {
+    const projectCheck = await pool.query(
+      "SELECT created_by FROM projects WHERE id = $1",
+      [id],
+    );
+    if (!projectCheck.rows.length)
+      return res.status(404).json({ error: "Project not found." });
+
+    if (
+      !req.user.is_platform_admin &&
+      projectCheck.rows[0].created_by !== req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({
+          error: "Only project owners or admins can delete this project.",
+        });
+    }
+
     const result = await pool.query("DELETE FROM projects WHERE id = $1", [id]);
     logAudit(req.user.id, id, "project_delete", { projectId: id });
-    logger.info({ userId: req.user.id, projectId: id }, 'Project deleted');
+    logger.info({ userId: req.user.id, projectId: id }, "Project deleted");
     res.json({ success: true });
   } catch (err: any) {
-    logger.error({ err: err.message, projectId: id }, 'Project deletion failed');
+    logger.error(
+      { err: err.message, projectId: id },
+      "Project deletion failed",
+    );
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -205,10 +281,28 @@ export const addMember = async (req: any, res: Response) => {
   const { id: projectId } = req.params;
   const { userId, environments, presetName, expiresAt } = req.body;
   if (!userId || !Array.isArray(environments)) {
-    return res.status(400).json({ error: "userId and environments[] are required." });
+    return res
+      .status(400)
+      .json({ error: "userId and environments[] are required." });
   }
 
   try {
+    const projectCheck = await pool.query(
+      "SELECT created_by FROM projects WHERE id = $1",
+      [projectId],
+    );
+    if (!projectCheck.rows.length)
+      return res.status(404).json({ error: "Project not found." });
+
+    if (
+      !req.user.is_platform_admin &&
+      projectCheck.rows[0].created_by !== req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only project owners or admins can manage members." });
+    }
+
     await pool.query(
       `INSERT INTO project_members (project_id, user_id, environments, preset_name, expires_at)
        VALUES ($1, $2, $3, $4, $5)
@@ -218,11 +312,20 @@ export const addMember = async (req: any, res: Response) => {
          expires_at = EXCLUDED.expires_at`,
       [projectId, userId, environments, presetName || null, expiresAt || null],
     );
-    logAudit(req.user.id, projectId, "member_add", { targetUserId: userId, preset: presetName });
-    logger.info({ userId: req.user.id, projectId, targetUserId: userId }, 'Project member added/updated');
+    logAudit(req.user.id, projectId, "member_add", {
+      targetUserId: userId,
+      preset: presetName,
+    });
+    logger.info(
+      { userId: req.user.id, projectId, targetUserId: userId },
+      "Project member added/updated",
+    );
     res.json({ success: true });
   } catch (err: any) {
-    logger.error({ err: err.message, projectId, targetUserId: userId }, 'Failed to add project member');
+    logger.error(
+      { err: err.message, projectId, targetUserId: userId },
+      "Failed to add project member",
+    );
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -231,15 +334,37 @@ export const addMember = async (req: any, res: Response) => {
 export const removeMember = async (req: any, res: Response) => {
   const { id: projectId, userId } = req.params;
   try {
+    const projectCheck = await pool.query(
+      "SELECT created_by FROM projects WHERE id = $1",
+      [projectId],
+    );
+    if (!projectCheck.rows.length)
+      return res.status(404).json({ error: "Project not found." });
+
+    if (
+      !req.user.is_platform_admin &&
+      projectCheck.rows[0].created_by !== req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only project owners or admins can manage members." });
+    }
+
     await pool.query(
       "DELETE FROM project_members WHERE project_id = $1 AND user_id = $2",
       [projectId, userId],
     );
     logAudit(req.user.id, projectId, "member_remove", { targetUserId: userId });
-    logger.info({ userId: req.user.id, projectId, targetUserId: userId }, 'Project member removed');
+    logger.info(
+      { userId: req.user.id, projectId, targetUserId: userId },
+      "Project member removed",
+    );
     res.json({ success: true });
   } catch (err: any) {
-    logger.error({ err: err.message, projectId, targetUserId: userId }, 'Failed to remove project member');
+    logger.error(
+      { err: err.message, projectId, targetUserId: userId },
+      "Failed to remove project member",
+    );
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -252,20 +377,33 @@ export const getProjectByKey = async (req: any, res: Response) => {
       `SELECT p.id, p.name, p.description, p.github_repo, p.project_key, p.created_at
        FROM projects p
        LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $2
-       WHERE p.project_key = $1 AND (pm.user_id = $2 OR $3 = 'admin') 
-       AND (pm.expires_at IS NULL OR pm.expires_at > now() OR $3 = 'admin')`,
-      [projectKey, req.user.id, req.user.role],
+       WHERE p.project_key = $1 AND (pm.user_id = $2 OR $3 = true) 
+       AND (pm.expires_at IS NULL OR pm.expires_at > now() OR $3 = true)`,
+      [projectKey, req.user.id, req.user.is_platform_admin],
     );
 
     if (!result.rows.length) {
-      logger.warn({ projectKey, userId: req.user.id }, 'Project resolution failed: Invalid key or access denied');
-      return res.status(404).json({ error: "Project not found, access expired, or access denied." });
+      logger.warn(
+        { projectKey, userId: req.user.id },
+        "Project resolution failed: Invalid key or access denied",
+      );
+      return res
+        .status(404)
+        .json({
+          error: "Project not found, access expired, or access denied.",
+        });
     }
 
-    logger.debug({ projectKey, userId: req.user.id, projectId: result.rows[0].id }, 'Project key resolved');
+    logger.debug(
+      { projectKey, userId: req.user.id, projectId: result.rows[0].id },
+      "Project key resolved",
+    );
     res.json({ project: sanitizeProject(result.rows[0]) });
   } catch (err: any) {
-    logger.error({ err: err.message, projectKey }, 'Failed to resolve project key');
+    logger.error(
+      { err: err.message, projectKey },
+      "Failed to resolve project key",
+    );
     res.status(500).json({ error: "Internal server error." });
   }
 };

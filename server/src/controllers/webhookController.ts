@@ -8,8 +8,13 @@ export const addWebhook = async (req: any, res: Response) => {
   if (!url) return res.status(400).json({ error: 'URL is required.' });
 
   try {
-    // Basic validation that user has admin access to project (or member access)
-    // We reuse existing logic or just check membership
+    // Ownership check: Admin or Project Creator
+    const projectCheck = await pool.query('SELECT created_by FROM projects WHERE id = $1', [projectId]);
+    if (!projectCheck.rows.length) return res.status(404).json({ error: 'Project not found.' });
+    if (req.user.role !== 'admin' && projectCheck.rows[0].created_by !== req.user.id) {
+       return res.status(403).json({ error: 'Only project owners or admins can manage webhooks.' });
+    }
+
     const result = await pool.query(
       `INSERT INTO webhooks (project_id, url) VALUES ($1, $2) RETURNING id`,
       [projectId, url]

@@ -69,9 +69,14 @@ export const getAsset = async (req: any, res: Response) => {
   }
 };
 
-// POST /user-assets — Issue an asset to a user (Admin only)
+// POST /user-assets — Issue an asset to a user
 export const issueAsset = async (req: any, res: Response) => {
-  const { userId, name, type, value, metadata } = req.body;
+  let { userId, name, type, value, metadata } = req.body;
+  
+  if (req.user.role !== 'admin') {
+     userId = req.user.id; // Non-admins can only issue to themselves
+  }
+
   if (!userId || !name || !value) return res.status(400).json({ error: 'userId, name, and value are required.' });
 
   try {

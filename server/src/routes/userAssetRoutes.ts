@@ -6,7 +6,7 @@ const router = Router();
 
 router.get('/', requireAuth, listMyAssets);
 router.get('/:id', requireAuth, getAsset);
-router.post('/', requireAuth, requireAdmin, issueAsset);
+router.post('/', requireAuth, issueAsset);
 router.delete('/:id', requireAuth, revokeAsset);
 router.get('/user/:id', requireAuth, requireAdmin, listUserAssets);
 

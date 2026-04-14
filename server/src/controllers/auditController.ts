@@ -58,14 +58,23 @@ export const listAuditLogs = async (req: any, res: Response) => {
 // GET /audit-logs/stats — Quick overview for the dashboard
 export const getAuditStats = async (req: any, res: Response) => {
   try {
-    const result = await pool.query(`
+    let query = `
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE action LIKE 'secret_read%') as reads,
         COUNT(*) FILTER (WHERE action LIKE 'secret_write%') as writes,
         COUNT(*) FILTER (WHERE created_at > now() - interval '24 hours') as last_24h
       FROM audit_logs
-    `);
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (req.user.role !== 'admin') {
+      params.push(req.user.id);
+      query += ` AND project_id IN (SELECT project_id FROM project_members WHERE user_id = $1)`;
+    }
+
+    const result = await pool.query(query, params);
     res.json({ stats: result.rows[0] });
   } catch (err) {
     console.error(err);

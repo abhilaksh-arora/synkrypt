@@ -22,6 +22,8 @@ export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const [isSetup, setIsSetup] = useState(false);
+  const [publicRegEnabled, setPublicRegEnabled] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const [form, setForm] = useState({ email: "", name: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,11 @@ export default function LoginPage() {
     }
     api
       .setupStatus()
-      .then((d) => setIsSetup(d.needsSetup))
+      .then((d) => {
+        setIsSetup(d.needsSetup);
+        setPublicRegEnabled(d.publicRegistrationEnabled);
+        if (d.needsSetup) setIsRegistering(true);
+      })
       .catch(() => setError("Backend unavailable"))
       .finally(() => setInitLoading(false));
   }, [user, navigate]);
@@ -44,7 +50,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      if (isSetup) {
+      if (isRegistering || isSetup) {
         await api.register({
           email: form.email,
           name: form.name,
@@ -99,18 +105,20 @@ export default function LoginPage() {
 
           <CardHeader className="space-y-2 pb-8 pt-8">
             <CardTitle className="text-3xl font-extrabold tracking-tight text-foreground">
-              {isSetup ? "Register" : "Login"}
+              {isSetup ? "Bootstrap" : isRegistering ? "Join Synkrypt" : "Login"}
             </CardTitle>
             <CardDescription className="text-muted-foreground text-base">
               {isSetup
                 ? "Define the root administrator identity for this node."
+                : isRegistering
+                ? "Create your professional account on our universal infrastructure."
                 : "Verify your identity to access secured environments."}
             </CardDescription>
           </CardHeader>
 
           <CardContent>
             <form id="auth-form" onSubmit={handleSubmit} className="space-y-6">
-              {isSetup && (
+              {(isSetup || isRegistering) && (
                 <div className="space-y-2">
                   <Label
                     htmlFor="name"
@@ -189,7 +197,7 @@ export default function LoginPage() {
             </form>
           </CardContent>
 
-          <CardFooter className="pt-2 pb-8">
+          <CardFooter className="flex-col pt-2 pb-8">
             <Button
               form="auth-form"
               type="submit"
@@ -200,11 +208,28 @@ export default function LoginPage() {
                 <Loader2 className="w-6 h-6 animate-spin text-primary-foreground" />
               ) : (
                 <>
-                  {isSetup ? "Bootstrap System" : "Authenticate Identity"}
+                  {isSetup
+                    ? "Bootstrap System"
+                    : isRegistering
+                    ? "Create Account"
+                    : "Authenticate Identity"}
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </Button>
+
+            {!isSetup && publicRegEnabled && (
+              <div className="w-full text-center mt-6">
+                <button
+                  onClick={() => setIsRegistering(!isRegistering)}
+                  className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors border-b border-transparent hover:border-primary/30 pb-0.5"
+                >
+                  {isRegistering
+                    ? "Already have an account? Sign in"
+                    : "Don't have an account? Create one"}
+                </button>
+              </div>
+            )}
           </CardFooter>
         </Card>
 

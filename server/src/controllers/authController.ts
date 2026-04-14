@@ -44,19 +44,22 @@ export const register = async (req: Request, res: Response) => {
     const countResult = await pool.query('SELECT COUNT(*) FROM users');
     const userCount = parseInt(countResult.rows[0].count, 10);
 
-    // Lock registration once any user exists — admins use POST /users (invite) instead
-    if (userCount > 0) {
-      logger.warn({ email }, 'Registration rejected: System already setup');
+    const publicReg = process.env.PUBLIC_REGISTRATION_ENABLED === 'true';
+
+    // Lock registration once any user exists UNLESS public registration is enabled
+    if (userCount > 0 && !publicReg) {
+      logger.warn({ email }, 'Registration rejected: Public sign-ups disabled');
       return res.status(403).json({ error: 'Registration is closed. Contact your admin.' });
     }
 
-    // First user → admin
+    // First user is a platform admin
+    const isAdmin = userCount === 0;
     const password_hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
-      `INSERT INTO users (email, name, password_hash, role)
-       VALUES ($1, $2, $3, 'admin')
-       RETURNING id, email, name, role`,
-      [email, name, password_hash]
+      `INSERT INTO users (email, name, password_hash, is_platform_admin)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, email, name, is_platform_admin`,
+      [email, name, password_hash, isAdmin]
     );
 
     const user = result.rows[0];
@@ -81,7 +84,10 @@ export const setupStatus = async (_req: Request, res: Response) => {
   try {
     const countResult = await pool.query('SELECT COUNT(*) FROM users');
     const userCount = parseInt(countResult.rows[0].count, 10);
-    res.json({ needsSetup: userCount === 0 });
+    res.json({ 
+      needsSetup: userCount === 0,
+      publicRegistrationEnabled: process.env.PUBLIC_REGISTRATION_ENABLED === 'true'
+    });
   } catch (err: any) {
     logger.error({ err: err.message }, 'Failed to fetch setup status');
     res.status(500).json({ error: 'Internal server error.' });
@@ -97,7 +103,7 @@ export const login = async (req: Request, res: Response) => {
 
   try {
     const result = await pool.query(
-      'SELECT id, email, name, role, password_hash FROM users WHERE email = $1',
+      'SELECT id, email, name, is_platform_admin, password_hash FROM users WHERE email = $1',
       [email]
     );
     if (result.rows.length === 0) {
@@ -118,7 +124,7 @@ export const login = async (req: Request, res: Response) => {
     
     logger.info({ userId: user.id, email: user.email }, 'User logged in successfully');
     
-    res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+    res.json({ user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_platform_admin } });
   } catch (err: any) {
     logger.error({ err: err.message, email }, 'Login process failed');
     res.status(500).json({ error: 'Internal server error.' });
@@ -153,7 +159,7 @@ export const me = async (req: any, res: Response) => {
 
   try {
     const result = await pool.query(
-      'SELECT id, email, name, role, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, is_platform_admin as "isAdmin", created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     if (result.rows.length === 0) {

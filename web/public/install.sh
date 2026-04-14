@@ -18,7 +18,7 @@ echo " \___ \| | | | '_ \| |/ / '__| | | | '_ \ | __|"
 echo "  ___) | |_| | | | |   <| |  | |_| | |_) || |_ "
 echo " |____/ \__, |_| |_|_|\_\_|   \__, | .__/  \__|"
 echo "        |___/                 |___/|_|         "
-echo -e "  The Professional Secrets Manager${NC}\n"
+echo -e "  The Zero-Trust Secrets Manager${NC}\n"
 
 # 1. Detect OS and Architecture
 OS="$(uname -s)"

@@ -130,8 +130,8 @@ const sections: DocSection[] = [
     body: (
       <>
         <p>
-          Synkrypt simplifies configuration management by providing a centralized, project-first architecture based on a zero-knowledge model. 
-          <strong className="text-foreground"> Projects</strong> are the primary cryptographic and operational boundary.
+          Synkrypt simplifies configuration management by providing a centralized, project-first architecture based on a multi-tenant model. 
+          <strong className="text-foreground"> Organizations</strong> are the primary cryptographic and operational boundary, allowing you to isolate different teams or clients on a single node.
         </p>
         <p className="mt-4 mb-2">
           Underneath, every <strong className="text-foreground"> Environment</strong> (such as <InlineCode>dev</InlineCode>, <InlineCode>staging</InlineCode>, or <InlineCode>prod</InlineCode>) receives its own set of isolated encryption keys. This guarantees that a breach in your development cluster cannot technically decipher production strings.
@@ -159,58 +159,51 @@ const sections: DocSection[] = [
     ),
   },
   {
-    id: "local-setup",
-    label: "Local Setup",
+    id: "deployment",
+    label: "Deployment & Setup",
     group: "General",
     icon: TerminalSquare,
-    title: "Server & CLI Setup",
-    description:
-      "Get the Synkrypt platform running on your local machine or server infrastructure.",
+    title: "Platform Installation",
+    description: "Synkrypt can be consumed as a Managed Cloud service or deployed entirely inside your own air-gapped infrastructure.",
     body: (
       <>
-        <Callout tone="neutral" title="Recommended Architecture">
-           We strongly recommend running the Synkrypt Node inside a private VPC. The platform is designed to be air-gapped capable; it does not communicate with external analytics or telemetry servers.
+        <Callout tone="success" title="Path A: Managed Cloud (SaaS)">
+           The easiest way to start securely. Download the lightweight CLI using the one-line installer, then link your workspace to the cloud backend.
+           <br/><br/>
+           <InlineCode>curl -fsSL https://synkrypt.abhilaksharora.com/install.sh | bash</InlineCode>
         </Callout>
-        <div className="mt-6" />
+
+        <div className="mt-8 mb-4 border-b border-border/50 pb-2">
+           <h3 className="text-[15px] font-bold text-foreground">Path B: Enterprise Air-Gapped</h3>
+           <p className="text-xs text-muted-foreground mt-1">Deploy the primary node in your own VPC. It does not communicate with external analytics or telemetry servers.</p>
+        </div>
+
         <StepList
           steps={[
             {
               title: "Requirements",
-              body: (
-                <p>
-                  Ensure you have <strong className="text-foreground">Bun v1.0+</strong> (used for its ultra-fast C++ JavaScript engine and built-in SQLite drivers) and <strong className="text-foreground">PostgreSQL 14+</strong> installed on your target machine.
-                </p>
-              ),
+              body: <p>Ensure <strong className="text-foreground">Bun v1.0+</strong> and <strong className="text-foreground">PostgreSQL 14+</strong> are installed.</p>,
             },
             {
               title: "Installation & Dependencies",
-              body: (
-                <CodeBlock label="bash">{`git clone https://github.com/abhilaksh/synkrypt.git
-cd synkrypt
-bun install`}</CodeBlock>
-              ),
+              body: <CodeBlock label="bash">{`git clone https://github.com/abhilaksh-arora/synkrypt.git\ncd synkrypt\nbun install`}</CodeBlock>,
             },
             {
-              title: "Database Initialization",
+              title: "Configuration",
               body: (
                 <>
-                  <p className="mb-2">Run the migration script to establish the V3.5 relational schema and generate the initial Database Master Key (DMK).</p>
-                  <CodeBlock label="bash">{`cd server
-bun run src/db/migrate.ts`}</CodeBlock>
+                  <p className="mb-2">Define your identity and security tokens in <InlineCode>server/.env</InlineCode>.</p>
+                  <CodeBlock label="env">{`# Toggle public registration for SaaS mode\nPUBLIC_REGISTRATION_ENABLED=false\n\n# Security secrets\nSERVER_SECRET=<64_char_hex>\nJWT_SECRET=<64_char_hex>`}</CodeBlock>
                 </>
-              ),
+              )
             },
             {
               title: "Start Platform Node",
               body: (
                 <>
                   <p className="mb-2">Launch the API server and the Dashboard UI concurrently from the workspace root.</p>
-                  <CodeBlock label="bash">{`# From workspace root
-bun run dev`}</CodeBlock>
-                  <p>
-                    Dashboard Port: <InlineCode>http://localhost:5173</InlineCode><br />
-                    Server API Port: <InlineCode>http://localhost:2809</InlineCode>
-                  </p>
+                  <CodeBlock label="bash">{`# From workspace root\nbun run dev`}</CodeBlock>
+                  <p>Dashboard Port: <InlineCode>http://localhost:5173</InlineCode><br />Server API Port: <InlineCode>http://localhost:2809</InlineCode></p>
                 </>
               ),
             },
@@ -219,8 +212,7 @@ bun run dev`}</CodeBlock>
               body: (
                 <>
                   <p className="mb-2">Make the <InlineCode>synkrypt</InlineCode> command globally accessible across your operating system.</p>
-                  <CodeBlock label="bash">{`cd cli
-bun link`}</CodeBlock>
+                  <CodeBlock label="bash">{`cd cli\nbun link`}</CodeBlock>
                 </>
               ),
             },
@@ -239,8 +231,8 @@ bun link`}</CodeBlock>
       "Provision access, assign roles, and handle offboarding with professional-grade governance tools.",
     body: (
       <>
-        <Callout tone="neutral" title="Role Based Access Matrix">
-           Synkrypt uses three primary identity classifications. <strong className="text-foreground">Admins</strong> have full operational control over vaults and settings. <strong className="text-foreground">Developers</strong> can read environments they are permitted to and pull secrets. <strong className="text-foreground">Machines</strong> (Service Tokens) are scoped strictly to a single environment (e.g., prod) for runtime pull operations.
+        <Callout tone="neutral" title="Hierarchical Role Matrix">
+           Synkrypt uses an organization-scoped permission model. <strong className="text-foreground">Owners</strong> have full operational control over the organization, its billing, and members. <strong className="text-foreground">Admins</strong> can manage all projects and provision access for team members. <strong className="text-foreground">Members</strong> can interact with specific projects they are explicitly assigned to.
         </Callout>
         <div className="mt-6" />
         <div className="grid gap-4 md:grid-cols-2">
@@ -265,7 +257,7 @@ bun link`}</CodeBlock>
                <ShieldAlert size={16} className="text-rose-500" /> Instant Kill-switch
             </h4>
             <p className="text-sm">
-              The Global Revoke feature allows administrators to instantly terminate an identity. The user is instantly removed from all projects, their active WebSockets are disconnected, and tokens are scrubbed.
+              The Revoke feature allows administrators to instantly terminate an identity within an organization. The user is instantly removed from all organizational projects, their active WebSockets are disconnected, and session tokens are scrubbed.
             </p>
           </div>
           <div className="rounded-2xl border border-border bg-muted/5 p-5 hover:bg-muted/10 transition-colors">

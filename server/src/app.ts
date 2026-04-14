@@ -6,6 +6,7 @@ import projectRoutes from './routes/projectRoutes';
 import auditLogsRoutes from './routes/auditRoutes';
 import presetRoutes from './routes/accessPresetRoutes';
 import userAssetRoutes from './routes/userAssetRoutes';
+import organizationRoutes from './routes/organizationRoutes';
 import { profilerMiddleware } from './middleware/profilerMiddleware';
 import logger from './utils/logger';
 
@@ -38,6 +39,7 @@ app.use('/projects', projectRoutes);
 app.use('/audit-logs', auditLogsRoutes);
 app.use('/access-presets', presetRoutes);
 app.use('/user-assets', userAssetRoutes);
+app.use('/orgs', organizationRoutes);
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: any) => {

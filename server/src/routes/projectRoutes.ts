@@ -11,15 +11,15 @@ const router = Router({ mergeParams: true });
 
 // Org-scoped
 router.get('/', requireAuth, listProjects);
-router.post('/', requireAuth, requireAdmin, createProject);
+router.post('/', requireAuth, createProject);
 
 // Project-scoped (standalone, used by /projects/:id paths in app.ts)
 router.get('/by-key/:projectKey', requireAuth, getProjectByKey);
 router.get('/:id', requireAuth, getProject);
-router.put('/:id', requireAuth, requireAdmin, updateProject);
-router.delete('/:id', requireAuth, requireAdmin, deleteProject);
-router.post('/:id/members', requireAuth, requireAdmin, addMember);
-router.delete('/:id/members/:userId', requireAuth, requireAdmin, removeMember);
+router.put('/:id', requireAuth, updateProject);
+router.delete('/:id', requireAuth, deleteProject);
+router.post('/:id/members', requireAuth, addMember);
+router.delete('/:id/members/:userId', requireAuth, removeMember);
 router.post('/:id/webhooks', requireAuth, addWebhook);
 
 // Nest secrets under projects

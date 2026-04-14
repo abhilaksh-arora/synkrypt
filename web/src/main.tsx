@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { OrgProvider } from "./context/OrgContext";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -49,7 +50,8 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <AuthProvider>
-        <TooltipProvider>
+        <OrgProvider>
+          <TooltipProvider>
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<LandingPage />} />
@@ -100,7 +102,8 @@ createRoot(document.getElementById("root")!).render(
           </BrowserRouter>
           <Toaster />
         </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
+      </OrgProvider>
+    </AuthProvider>
+  </ThemeProvider>
   </StrictMode>,
 );

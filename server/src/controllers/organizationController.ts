@@ -5,7 +5,7 @@ import pool, { logAudit } from '../db/db';
 export const listOrgs = async (req: any, res: Response) => {
   try {
     let result;
-    if (req.user.role === 'admin') {
+    if (req.user.is_platform_admin) {
       result = await pool.query(
         'SELECT id, name, created_by, created_at FROM organizations ORDER BY created_at ASC'
       );
@@ -39,10 +39,10 @@ export const createOrg = async (req: any, res: Response) => {
     );
     const org = result.rows[0];
 
-    // Creator is automatically a member
+    // Creator is automatically the 'owner'
     await pool.query(
-      'INSERT INTO organization_members (org_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-      [org.id, req.user.id]
+      'INSERT INTO organization_members (org_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+      [org.id, req.user.id, 'owner']
     );
 
     res.status(201).json({ org });
@@ -63,7 +63,7 @@ export const getOrg = async (req: any, res: Response) => {
     if (!orgResult.rows.length) return res.status(404).json({ error: 'Org not found.' });
 
     const membersResult = await pool.query(
-      `SELECT u.id, u.email, u.name, u.role
+      `SELECT u.id, u.email, u.name, u.is_platform_admin as global_admin, om.role as org_role
        FROM organization_members om
        JOIN users u ON u.id = om.user_id
        WHERE om.org_id = $1`,
@@ -81,6 +81,11 @@ export const getOrg = async (req: any, res: Response) => {
 export const deleteOrg = async (req: any, res: Response) => {
   const { id } = req.params;
   try {
+    const orgCheck = await pool.query('SELECT created_by FROM organizations WHERE id = $1', [id]);
+    if (!orgCheck.rows.length) return res.status(404).json({ error: 'Org not found.' });
+    if (!req.user.is_platform_admin && orgCheck.rows[0].created_by !== req.user.id) {
+       return res.status(403).json({ error: 'Only organization owners or admins can delete this organization.' });
+    }
     await pool.query('DELETE FROM organizations WHERE id = $1', [id]);
     res.json({ success: true });
   } catch (err) {
@@ -92,13 +97,18 @@ export const deleteOrg = async (req: any, res: Response) => {
 // POST /orgs/:id/members
 export const addMember = async (req: any, res: Response) => {
   const { id: orgId } = req.params;
-  const { userId } = req.body;
+  const { userId, role } = req.body;
   if (!userId) return res.status(400).json({ error: 'userId is required.' });
 
   try {
+    // Permission check (handled by middleware but added here for safety if called directly)
+    if (!req.user.is_platform_admin && req.orgRole !== 'owner' && req.orgRole !== 'admin') {
+       return res.status(403).json({ error: 'Only organization owners or admins can manage members.' });
+    }
+
     await pool.query(
-      'INSERT INTO organization_members (org_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-      [orgId, userId]
+      'INSERT INTO organization_members (org_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT (org_id, user_id) DO UPDATE SET role = EXCLUDED.role',
+      [orgId, userId, role || 'member']
     );
     res.json({ success: true });
   } catch (err) {
@@ -111,6 +121,11 @@ export const addMember = async (req: any, res: Response) => {
 export const removeMember = async (req: any, res: Response) => {
   const { id: orgId, userId } = req.params;
   try {
+    // Permission check (handled by middleware)
+    if (!req.user.is_platform_admin && req.orgRole !== 'owner' && req.orgRole !== 'admin') {
+       return res.status(403).json({ error: 'Only organization owners or admins can manage members.' });
+    }
+
     await pool.query(
       'DELETE FROM organization_members WHERE org_id = $1 AND user_id = $2',
       [orgId, userId]

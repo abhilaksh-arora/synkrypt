@@ -21,11 +21,13 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useOrg } from '../context/OrgContext';
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentOrg, currentOrgRole } = useOrg();
   const { toast } = useToast();
   
   const [project, setProject] = useState<any>(null);
@@ -68,6 +70,10 @@ export default function ProjectDetailPage() {
   const [webhookUrl, setWebhookUrl] = useState('');
   const [savingWebhook, setSavingWebhook] = useState(false);
 
+  const [userQuery, setUserQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ name: '', description: '', github_repo: '' });
 
@@ -87,9 +93,11 @@ export default function ProjectDetailPage() {
       const sData = await api.listSecrets(id!, env) as any;
       setSecrets(sData.secrets);
 
-      if (user?.role === 'admin') {
-        const uData = await api.listUsers();
-        setOrgMembers(uData.users || []);
+      const isOrgAdmin = currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.role === 'admin';
+
+      if (isOrgAdmin && currentOrg) {
+        const uData = await api.getOrg(currentOrg.id);
+        setOrgMembers(uData.members || []);
         const preData = await api.listPresets();
         setAccessPresets(preData.presets || []);
       }
@@ -97,6 +105,23 @@ export default function ProjectDetailPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = async (q: string) => {
+    setUserQuery(q);
+    if (q.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const data = await api.searchUsers(q);
+      setSearchResults(data.users || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -223,10 +248,15 @@ export default function ProjectDetailPage() {
   };
 
   const handleDeleteProject = async () => {
+    const isOwner = currentOrgRole === 'owner' || user?.role === 'admin';
+    if (!isOwner) {
+       toast({ title: "Access Denied", description: "Only organization owners can delete projects.", variant: "destructive" });
+       return;
+    }
     if (!confirm('DELETE PROJECT: This will purge all secrets and members. This cannot be undone.')) return;
     try {
       await api.deleteProject(id!);
-      navigate('/');
+      navigate('/dashboard');
       toast({ title: "Project Deleted" });
     } catch (err) {
       console.error(err);
@@ -359,7 +389,7 @@ export default function ProjectDetailPage() {
                  <TabsTrigger value="prod" className="rounded-lg px-4 py-2 font-bold text-sm uppercase tracking-widest transition-all">Prod</TabsTrigger>
                </TabsList>
              </Tabs>
-             {user?.role === 'admin' && (
+             {(currentOrgRole === 'owner' || currentOrgRole === 'admin' || user?.role === 'admin') && (
                <div className="flex flex-wrap gap-3 lg:justify-end">
                  <Button onClick={() => setIsAddOpen(true)} className="h-10 rounded-xl px-5 font-bold shadow-sm group text-sm">
                    <PlusIcon className="mr-2 size-4 group-hover:rotate-90 transition-transform" /> Add Secret
@@ -951,14 +981,31 @@ export default function ProjectDetailPage() {
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Select User</Label>
-                <div className="rounded-xl border border-border overflow-y-auto max-h-[350px] bg-muted/5 p-3 space-y-2">
-                  {orgMembers.filter(u => !projectMembers.find(m => m.id === u.id)).map(u => (
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1.5">Find Colleague</Label>
+                <div className="relative group">
+                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
+                   <Input 
+                      placeholder="Search by name or email..." 
+                      className="pl-9 h-11 rounded-xl bg-muted/10 border-border text-sm"
+                      value={userQuery}
+                      onChange={e => handleSearch(e.target.value)}
+                   />
+                </div>
+                <div className="rounded-xl border border-border overflow-y-auto max-h-[280px] bg-muted/5 p-3 space-y-2">
+                  {isSearching ? (
+                    <div className="flex items-center justify-center py-10 opacity-30"><Loader2 className="animate-spin size-6" /></div>
+                  ) : (searchResults.length > 0 ? searchResults : orgMembers).filter(u => !projectMembers.find(m => m.id === u.id)).map(u => (
                     <button key={u.id} onClick={() => { setClearanceMember(u); setClearanceEnvs(['dev']); }} className={`w-full flex items-center gap-4 p-5 rounded-xl border transition-all text-left group ${clearanceMember?.id === u.id ? 'bg-primary/10 border-primary/30' : 'border-transparent hover:bg-primary/[0.04]'}`}>
                       <div className="h-10 w-10 rounded-xl bg-background border border-border text-muted-foreground flex items-center justify-center text-sm font-bold group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">{u.name.charAt(0)}</div>
-                      <div className="text-sm font-bold tracking-tight">{u.name}</div>
+                      <div className="min-w-0">
+                         <div className="text-sm font-bold tracking-tight truncate">{u.name}</div>
+                         <div className="text-[10px] text-muted-foreground truncate italic">{u.email}</div>
+                      </div>
                     </button>
                   ))}
+                  {!isSearching && userQuery.length >= 2 && searchResults.length === 0 && (
+                     <div className="py-10 text-center opacity-30 text-xs font-bold uppercase tracking-widest italic">No users found.</div>
+                  )}
                 </div>
               </div>
               <div className="space-y-6">

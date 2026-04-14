@@ -33,7 +33,7 @@ export default function AppLayout({ title }: AppLayoutProps) {
     <div className="flex min-h-screen w-full bg-background text-foreground overflow-hidden">
       {user && <Sidebar />}
       
-      <div className={`flex-1 flex flex-col min-w-0 transition-all ${user ? 'ml-[200px]' : ''}`}>
+      <div className={`flex-1 flex flex-col min-w-0 transition-all ${user ? 'ml-[240px]' : ''}`}>
         <header className="h-12 flex items-center justify-between px-6 border-b border-border/30 backdrop-blur-md bg-background/90 sticky top-0 z-40">
           <div className="flex items-center gap-3">
             <Breadcrumb>

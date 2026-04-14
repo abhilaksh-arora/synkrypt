@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 [![Typography: Professional](https://img.shields.io/badge/Typography-Professional-orange?style=flat-square)](https://synkrypt.com)
 
-**Synkrypt** is a localized, high-security secrets manager designed for project isolation and client-side runtime injection. It provides a professional, self-hostable alternative to centralized secret stores, giving you full control over your sensitive configuration.
+**Synkrypt** is a high-security secrets management platform available as a **Managed Cloud Service** or a **Self-Hosted Enterprise Node**. Designed for zero-trust project isolation and client-side runtime injection, it provides a professional, localized alternative to centralized secret stores.
 
 ---
 
@@ -31,13 +31,17 @@ Synkrypt does not use simple symmetric encryption. It relies on a multi-tiered c
 3. **Layer 3: AES-256-GCM AEAD**: Each individual secret is encrypted using Advanced Encryption Standard in Galois/Counter Mode, ensuring both confidentiality and data authenticity.
 4. **Layer 4: Personal Vault RSA**: Developer-specific files are hybrid-encrypted using unique client-side RSA/ECDH keypairs.
 
-### Team Governance & RBAC
+### Multi-Tenant Organization Scoping
 
-Provision access, assign roles, and handle offboarding with professional-grade governance tools.
+Synkrypt is now a multi-tenant platform. Every project, secret, and member is scoped to an **Organization**. This allows multiple teams to share a single platform node while maintaining absolute data sovereignty between organizational boundaries.
 
-- **Role Based Access Matrix**: Three primary classifications. Admins have absolute control, Developers have read/pull access scoped to specific environments, and Machines (Service Tokens) are locked to distinct infrastructure targets.
-- **Temporary TTL Access**: Set expiration dates (Time-To-Live). The moment the TTL hits zero, the user's session terminates and all their local ciphertexts are cryptographically invalidated by the server.
-- **Global Revoke Kill-switch**: Instantly remove a user from all projects and clusters. Active WebSockets are disconnected, and tokens are scrubbed instantly.
+- **Hierarchical Role Matrix**: Every user holds a specific role within their organization:
+    - **Owner**: Full lifecycle control over the organization, billing, and membership.
+    - **Admin**: Can create projects, manage environments, and provision access for members within the org.
+    - **Member**: Baseline access to specific projects they are assigned to. Read/pull rights are environment-guarded.
+- **Platform Administration**: A separate `Platform Admin` flag handles system-wide concerns like managing users across all organizations, audit auditing, and system configuration.
+- **Temporary TTL Access**: Set expiration dates (Time-To-Live) for members. The moment the TTL hits zero, the user's session terminates and all their local ciphertexts are cryptographically invalidated by the server.
+- **Organization Revoke**: Instantly remove a user from an organization. All related projects beome inaccessible instantly.
 
 ### Professional Dashboard
 
@@ -67,7 +71,28 @@ Validated sub-millisecond injection overhead. Synkrypt ensures security never sl
 
 ## Getting Started
 
-### 1. Requirements
+### Path A: Managed Cloud (Recommended)
+
+The fastest way to secure your infrastructure.
+
+1. **Sign Up**: Create an account at [synkrypt.abhilaksharora.com](https://synkrypt.abhilaksharora.com).
+2. **Install CLI**:
+   ```bash
+   curl -fsSL https://synkrypt.abhilaksharora.com/install.sh | bash
+   ```
+3. **Login & Run**:
+   ```bash
+   synkrypt login
+   synkrypt run --env dev -- <your-command>
+   ```
+
+---
+
+### Path B: Self-Hosted Enterprise Node (Air-Gapped)
+
+For organizations requiring total infrastructure sovereignty.
+
+#### 1. Requirements
 
 - [Bun](https://bun.sh) (v1.0.0+)
 - PostgreSQL
@@ -91,6 +116,7 @@ PORT=2809
 DATABASE_URL=postgresql://user:pass@localhost:5432/synkrypt
 SERVER_SECRET=<64_char_hex_string>
 JWT_SECRET=<64_char_hex_string>
+PUBLIC_REGISTRATION_ENABLED=false
 ```
 
 #### Run Migration & Start
@@ -205,7 +231,23 @@ Keep your toolset up-to-date or remove it cleanly:
 
 - **Update**: `synkrypt update` (Runs the official installer)
 - **Uninstall**: `synkrypt uninstall` (Removes the global binary)
-- **Full Purge**: `synkrypt uninstall --purge` (Removes binary and `~/.synkrypt` config)
+
+---
+
+## User Registration & SaaS Mode
+
+Synkrypt can be configured to operate as a private internal tool or a public-facing service.
+
+### Registration Toggle
+
+The platform's sign-up behavior is controlled by the `PUBLIC_REGISTRATION_ENABLED` environment variable in the server configuration.
+
+- **Managed SaaS Mode (`true`)**: Public registration is open. Anyone can visit `/login`, toggle to "Create Account," and join your infrastructure as a `developer`.
+- **Private/Enterprise Mode (`false`)**: Public sign-ups are disabled after the initial system bootstrap. New users must be invited by a Platform Administrator via the dashboard.
+
+### First-User Bootstrap
+
+The Synkrypt protocol includes an intelligent bootstrap mechanism. The very first account registered on a fresh database is automatically assigned the **Platform Admin** status, regardless of the registration toggle setting. This ensures you can always securely initialize and configure your node.
 
 ---
 

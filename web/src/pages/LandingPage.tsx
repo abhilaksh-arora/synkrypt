@@ -26,12 +26,12 @@ export default function LandingPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-xl transition-all">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm text-primary-foreground">
               <LockKeyhole className="h-5 w-5" />
             </div>
-            <span className="text-xl font-bold tracking-tighter text-black">
+            <span className="text-lg sm:text-xl font-bold tracking-tighter text-black">
               Synk<span className="text-primary">rypt</span>
             </span>
           </div>
@@ -51,16 +51,16 @@ export default function LandingPage() {
               {user ? (
                 <Button
                   onClick={() => navigate("/dashboard")}
-                  className="rounded-full h-10 px-6 font-bold shadow-md bg-primary text-white hover:opacity-90 transition-all"
+                  className="rounded-full h-9 sm:h-10 px-4 sm:px-6 text-xs sm:text-sm font-bold shadow-md bg-primary text-white hover:opacity-90 transition-all"
                 >
                   Go to Dashboard
                 </Button>
               ) : (
                 <Button
                   onClick={() => navigate("/login")}
-                  className="rounded-full h-10 px-6 font-bold shadow-md bg-primary text-white hover:opacity-90 transition-all"
+                  className="rounded-full h-9 sm:h-10 px-4 sm:px-6 text-xs sm:text-sm font-bold shadow-md bg-primary text-white hover:opacity-90 transition-all"
                 >
-                  Login / Start <ArrowRight className="ml-2 size-4" />
+                  Login / Start <ArrowRight className="ml-1.5 size-3.5 sm:size-4" />
                 </Button>
               )}
 
@@ -82,7 +82,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex-1 container mx-auto px-6 pt-24 pb-32 flex flex-col items-center text-center relative z-10">
+      <main className="flex-1 container mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-20 sm:pb-32 flex flex-col items-center text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -96,7 +96,7 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.1] text-foreground mb-8">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.1] text-foreground mb-8">
             The Zero-Trust Secrets
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-500">
@@ -110,13 +110,13 @@ export default function LandingPage() {
             store your plaintext secrets.
           </p>
 
-          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-6 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 sm:gap-6 w-full sm:w-auto">
             <Button
               onClick={() => navigate("/docs")}
               size="lg"
-              className="h-14 px-10 rounded-full text-base font-bold bg-primary text-white shadow-xl hover:opacity-90 hover:-translate-y-1 transition-all group"
+              className="h-12 sm:h-14 px-6 sm:px-10 rounded-full text-sm sm:text-base font-bold bg-primary text-white shadow-xl hover:opacity-90 hover:-translate-y-1 transition-all group"
             >
-              <BookOpen className="size-8 mr-3" />
+              <BookOpen className="size-5 sm:size-8 mr-2 sm:mr-3" />
               Read Documentation
             </Button>
             <Button
@@ -127,9 +127,9 @@ export default function LandingPage() {
                 )
               }
               size="lg"
-              className="h-14 px-10 rounded-full text-base font-bold shadow-xl bg-black text-white hover:bg-black/90 hover:-translate-y-1 transition-all group"
+              className="h-12 sm:h-14 px-6 sm:px-10 rounded-full text-sm sm:text-base font-bold shadow-xl bg-black text-white hover:bg-black/90 hover:-translate-y-1 transition-all group"
             >
-              <svg viewBox="0 0 24 24" className="size-10 mr-3 fill-current">
+              <svg viewBox="0 0 24 24" className="size-6 sm:size-10 mr-2 sm:mr-3 fill-current">
                 <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
               </svg>
               Star on GitHub
@@ -142,7 +142,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full mt-32 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
+          className="w-full mt-24 sm:mt-32 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-left"
         >
           <div className="p-8 rounded-3xl bg-card border border-border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] group hover:shadow-md hover:border-primary/20 transition-all">
             <div className="h-14 w-14 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors">

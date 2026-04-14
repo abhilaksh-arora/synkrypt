@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import type { Request, Response } from "express";
 import pool, { logAudit } from "../db/db";
+import logger from "../utils/logger";
 
 function generateProjectKey(): string {
   return "pk_" + crypto.randomBytes(12).toString("hex");
@@ -72,9 +73,10 @@ export const listProjects = async (req: any, res: Response) => {
         [req.user.id],
       );
     }
+    logger.debug({ userId: req.user.id, count: result.rows.length }, 'Projects listed');
     res.json({ projects: result.rows.map(sanitizeProject) });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, userId: req.user.id }, 'Failed to list projects');
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -83,6 +85,8 @@ export const listProjects = async (req: any, res: Response) => {
 export const createProject = async (req: any, res: Response) => {
   const { name, description, github_repo } = req.body;
   if (!name) return res.status(400).json({ error: "name is required." });
+
+  logger.info({ userId: req.user.id, name }, 'Creating new project');
 
   try {
     const project_key = generateProjectKey();
@@ -112,9 +116,11 @@ export const createProject = async (req: any, res: Response) => {
     );
 
     logAudit(req.user.id, project.id, "project_create", { name: project.name });
+    logger.info({ userId: req.user.id, projectId: project.id, name: project.name }, 'Project created successfully');
+    
     res.status(201).json({ project: sanitizeProject(project) });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, name }, 'Project creation failed');
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -128,8 +134,10 @@ export const getProject = async (req: any, res: Response) => {
        FROM projects WHERE id = $1`,
       [id],
     );
-    if (!projectResult.rows.length)
+    if (!projectResult.rows.length) {
+      logger.warn({ projectId: id, userId: req.user.id }, 'Project lookup failed: Not found');
       return res.status(404).json({ error: "Project not found." });
+    }
 
     const membersResult = await pool.query(
       `SELECT u.id, u.email, u.name, u.role, pm.environments, pm.preset_name, pm.expires_at, pm.last_active_at
@@ -143,8 +151,8 @@ export const getProject = async (req: any, res: Response) => {
       project: sanitizeProject(projectResult.rows[0]), 
       members: membersResult.rows 
     });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId: id }, 'Failed to fetch project details');
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -163,12 +171,17 @@ export const updateProject = async (req: any, res: Response) => {
        RETURNING id, name, description, github_repo, project_key`,
       [name ?? null, description ?? null, github_repo ?? null, id],
     );
-    if (!result.rows.length) return res.status(404).json({ error: "Project not found." });
+    if (!result.rows.length) {
+      logger.warn({ projectId: id }, 'Project update failed: Not found');
+      return res.status(404).json({ error: "Project not found." });
+    }
     
     logAudit(req.user.id, id, "project_update", { projectId: id });
+    logger.info({ userId: req.user.id, projectId: id }, 'Project updated');
+    
     res.json({ project: sanitizeProject(result.rows[0]) });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId: id }, 'Project update error');
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -177,11 +190,12 @@ export const updateProject = async (req: any, res: Response) => {
 export const deleteProject = async (req: any, res: Response) => {
   const { id } = req.params;
   try {
-    await pool.query("DELETE FROM projects WHERE id = $1", [id]);
+    const result = await pool.query("DELETE FROM projects WHERE id = $1", [id]);
     logAudit(req.user.id, id, "project_delete", { projectId: id });
+    logger.info({ userId: req.user.id, projectId: id }, 'Project deleted');
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId: id }, 'Project deletion failed');
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -205,9 +219,10 @@ export const addMember = async (req: any, res: Response) => {
       [projectId, userId, environments, presetName || null, expiresAt || null],
     );
     logAudit(req.user.id, projectId, "member_add", { targetUserId: userId, preset: presetName });
+    logger.info({ userId: req.user.id, projectId, targetUserId: userId }, 'Project member added/updated');
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId, targetUserId: userId }, 'Failed to add project member');
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -221,9 +236,10 @@ export const removeMember = async (req: any, res: Response) => {
       [projectId, userId],
     );
     logAudit(req.user.id, projectId, "member_remove", { targetUserId: userId });
+    logger.info({ userId: req.user.id, projectId, targetUserId: userId }, 'Project member removed');
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId, targetUserId: userId }, 'Failed to remove project member');
     res.status(500).json({ error: "Internal server error." });
   }
 };
@@ -242,12 +258,14 @@ export const getProjectByKey = async (req: any, res: Response) => {
     );
 
     if (!result.rows.length) {
+      logger.warn({ projectKey, userId: req.user.id }, 'Project resolution failed: Invalid key or access denied');
       return res.status(404).json({ error: "Project not found, access expired, or access denied." });
     }
 
+    logger.debug({ projectKey, userId: req.user.id, projectId: result.rows[0].id }, 'Project key resolved');
     res.json({ project: sanitizeProject(result.rows[0]) });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectKey }, 'Failed to resolve project key');
     res.status(500).json({ error: "Internal server error." });
   }
 };

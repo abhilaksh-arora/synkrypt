@@ -26,9 +26,10 @@ export async function request(method: string, path: string, body?: any) {
   });
 
   if (!res.ok) {
-    let err = `HTTP ${res.status}`;
+    const body = await res.text();
+    let err = body || `HTTP ${res.status}`;
     try {
-      const data = (await res.json()) as any;
+      const data = JSON.parse(body);
       if (data.error) err = data.error;
     } catch {}
     throw new Error(err);

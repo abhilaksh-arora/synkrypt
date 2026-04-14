@@ -1,15 +1,16 @@
 import app from './src/app';
 import { seedDefaultPresets } from './src/controllers/accessPresetController';
+import logger from './src/utils/logger';
 
 const PORT = process.env.PORT || 4000;
 
 // Initialize System Defaults
 seedDefaultPresets().then(() => {
-  console.log(' Access protocols initialized.');
+  logger.info('Access protocols initialized');
 }).catch(err => {
-  console.error(' Failed to initialize protocols:', err);
+  logger.error({ err: err.message }, 'Failed to initialize protocols');
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  logger.info({ port: PORT }, 'Synkrypt Server started');
 });

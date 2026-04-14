@@ -1,6 +1,6 @@
 # Synkrypt: Simplified Secrets Management
 
-[![Platform: Self-Hostable](https://img.shields.io/badge/Platform-Self--Hostable-blueviolet?style=flat-square)](https://github.com/abhilaksh/synkrypt)
+[![Platform: Self-Hostable](https://img.shields.io/badge/Platform-Self--Hostable-blueviolet?style=flat-square)](https://github.com/abhilaksh-arora/synkrypt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 [![Typography: Professional](https://img.shields.io/badge/Typography-Professional-orange?style=flat-square)](https://synkrypt.com)
 
@@ -58,7 +58,7 @@ Validated sub-millisecond injection overhead. Synkrypt ensures security never sl
 Clone the repository and initialize the database.
 
 ```bash
-git clone https://github.com/abhilaksh/synkrypt.git
+git clone https://github.com/abhilaksh-arora/synkrypt.git
 cd synkrypt
 bun install
 ```
@@ -194,7 +194,8 @@ To package new versions of the CLI for distribution:
 
 1. **Compile**: `cd cli && bun run compile:all`
 2. **Archive**: `cd cli && bun run release:assets`
-3. **Publish**: Upload the contents of `cli/release/` to a new GitHub Release.
+3. **Draft Release**: `gh release create v0.1.0 --title "v0.1.0" --notes "Synkrypt CLI binaries"`
+4. **Upload Assets**: `gh release upload v0.1.0 cli/release/* --clobber`
 
 ## License
 

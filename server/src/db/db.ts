@@ -1,11 +1,29 @@
 import { Pool } from 'pg';
 import crypto from 'crypto';
+import logger from '../utils/logger';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/synkrypt',
 });
 
-export const query = (text: string, params?: any[]) => pool.query(text, params);
+export const query = async (text: string, params?: any[]) => {
+  const start = process.hrtime.bigint();
+  try {
+    const res = await pool.query(text, params);
+    const duration = Number(process.hrtime.bigint() - start) / 1_000_000;
+    
+    if (duration > 100) {
+      logger.warn({ durationMs: duration.toFixed(2), query: text.substring(0, 100) }, 'Slow query detected');
+    } else {
+      logger.debug({ durationMs: duration.toFixed(2), query: text.substring(0, 50) }, 'Database query executed');
+    }
+    
+    return res;
+  } catch (err: any) {
+    logger.error({ err: err.message, query: text.substring(0, 100) }, 'Database query failed');
+    throw err;
+  }
+};
 
 export function hashSessionToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');

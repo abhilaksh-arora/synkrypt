@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { Request, Response } from 'express';
 import pool, { hashSessionToken, logAudit } from '../db/db';
+import logger from '../utils/logger';
 
 const SESSION_COOKIE = 'synkrypt_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14; // 14 days
@@ -37,13 +38,15 @@ export const register = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'email, name, and password are required.' });
   }
 
+  logger.info({ email, name }, 'New registration attempt initiated');
+
   try {
     const countResult = await pool.query('SELECT COUNT(*) FROM users');
     const userCount = parseInt(countResult.rows[0].count, 10);
 
     // Lock registration once any user exists — admins use POST /users (invite) instead
     if (userCount > 0) {
-      // Allow if request is from a logged-in admin (invite flow handled in userController)
+      logger.warn({ email }, 'Registration rejected: System already setup');
       return res.status(403).json({ error: 'Registration is closed. Contact your admin.' });
     }
 
@@ -59,20 +62,30 @@ export const register = async (req: Request, res: Response) => {
     const user = result.rows[0];
     const token = await createSession(user.id);
 
+    logger.info({ userId: user.id, email: user.email }, 'First admin registered successfully');
+
     res.setHeader('Set-Cookie', `${SESSION_COOKIE}=${token}; ${cookieOptions()}`);
     res.json({ user });
   } catch (err: any) {
-    if (err.code === '23505') return res.status(409).json({ error: 'Email already registered.' });
-    console.error(err);
+    if (err.code === '23505') {
+      logger.warn({ email }, 'Registration failed: Duplicate email');
+      return res.status(409).json({ error: 'Email already registered.' });
+    }
+    logger.error({ err: err.message, email }, 'Registration failed: Internal error');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
 
 // GET /auth/setup-status — tells the UI whether first-run registration is available
 export const setupStatus = async (_req: Request, res: Response) => {
-  const countResult = await pool.query('SELECT COUNT(*) FROM users');
-  const userCount = parseInt(countResult.rows[0].count, 10);
-  res.json({ needsSetup: userCount === 0 });
+  try {
+    const countResult = await pool.query('SELECT COUNT(*) FROM users');
+    const userCount = parseInt(countResult.rows[0].count, 10);
+    res.json({ needsSetup: userCount === 0 });
+  } catch (err: any) {
+    logger.error({ err: err.message }, 'Failed to fetch setup status');
+    res.status(500).json({ error: 'Internal server error.' });
+  }
 };
 
 // POST /auth/login
@@ -88,19 +101,26 @@ export const login = async (req: Request, res: Response) => {
       [email]
     );
     if (result.rows.length === 0) {
+      logger.warn({ email }, 'Login failed: User not found');
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
     const user = result.rows[0];
     const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return res.status(401).json({ error: 'Invalid credentials.' });
+    if (!valid) {
+      logger.warn({ email }, 'Login failed: Incorrect password');
+      return res.status(401).json({ error: 'Invalid credentials.' });
+    }
 
     const token = await createSession(user.id);
     res.setHeader('Set-Cookie', `${SESSION_COOKIE}=${token}; ${cookieOptions()}`);
     logAudit(user.id, null, 'login', `User logged in: ${user.email}`);
+    
+    logger.info({ userId: user.id, email: user.email }, 'User logged in successfully');
+    
     res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, email }, 'Login process failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
@@ -115,7 +135,12 @@ export const logout = async (req: Request, res: Response) => {
     ?.split('=')[1];
 
   if (token) {
-    await pool.query('DELETE FROM user_sessions WHERE token_hash = $1', [hashSessionToken(token)]);
+    try {
+      await pool.query('DELETE FROM user_sessions WHERE token_hash = $1', [hashSessionToken(token)]);
+      logger.info('User session deleted (logout)');
+    } catch (err: any) {
+      logger.error({ err: err.message }, 'Failed to delete session on logout');
+    }
   }
 
   res.setHeader('Set-Cookie', `${SESSION_COOKIE}=deleted; ${cookieOptions(0)}`);
@@ -131,10 +156,13 @@ export const me = async (req: any, res: Response) => {
       'SELECT id, email, name, role, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found.' });
+    if (result.rows.length === 0) {
+      logger.warn({ userId: req.user.id }, 'Me request failed: User no longer exists');
+      return res.status(404).json({ error: 'User not found.' });
+    }
     res.json({ user: result.rows[0] });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, userId: req.user.id }, 'Identity lookup failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };

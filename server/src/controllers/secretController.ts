@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import pool, { logAudit } from '../db/db';
 import { decryptMasterKey } from './projectController';
 import { notifyRestrictedAccess } from '../utils/notifier';
+import logger from '../utils/logger';
 
 // ── AES-256-GCM helpers ─────────────────────────────────────────────────────
 
@@ -39,12 +40,19 @@ async function getProjectWithAccess(projectId: string, userId: string, role: str
     [projectId, userId]
   );
 
-  if (!r.rows.length) return null;
+  if (!r.rows.length) {
+    logger.warn({ projectId, userId, env }, 'Project access denied or expired');
+    return null;
+  }
   const row = r.rows[0];
-  if (!row.environments.includes(env)) return null;
+  if (!row.environments.includes(env)) {
+    logger.warn({ projectId, userId, env }, 'Access denied: Environment not in allowed list');
+    return null;
+  }
 
   // Update last active timestamp
-  pool.query('UPDATE project_members SET last_active_at = now() WHERE project_id = $1 AND user_id = $2', [projectId, userId]).catch(console.error);
+  pool.query('UPDATE project_members SET last_active_at = now() WHERE project_id = $1 AND user_id = $2', [projectId, userId])
+    .catch(err => logger.error({ err: err.message, projectId, userId }, 'Failed to update last_active_at'));
 
   return row;
 }
@@ -85,9 +93,10 @@ export const listSecrets = async (req: any, res: Response) => {
       updated_at: row.updated_at,
     }));
 
+    logger.debug({ projectId, userId: req.user.id, env, count: secrets.length }, 'Secrets listed');
     res.json({ secrets });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId, env }, 'Failed to list secrets');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
@@ -104,6 +113,8 @@ export const upsertSecret = async (req: any, res: Response) => {
   try {
     const project = await getProjectWithAccess(projectId, req.user.id, req.user.role, environment);
     if (!project) return res.status(403).json({ error: 'Access denied.' });
+
+    logger.info({ projectId, userId: req.user.id, env: environment, key }, 'Upserting secret');
 
     const masterKey = decryptMasterKey(project.master_key);
     const encrypted_value = encrypt(String(value), masterKey);
@@ -122,9 +133,11 @@ export const upsertSecret = async (req: any, res: Response) => {
     );
 
     logAudit(req.user.id, projectId, 'secret_write', { key, env: environment, type: type || 'env', personal: !!userId });
+    logger.info({ userId: req.user.id, projectId, key, env: environment }, 'Secret upserted successfully');
+    
     res.json({ secret: result.rows[0] });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId, key }, 'Secret upsert failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
@@ -139,13 +152,18 @@ export const updateSecretVisibility = async (req: any, res: Response) => {
       'UPDATE secrets SET can_view = $1 WHERE id = $2 AND project_id = $3 RETURNING key, environment',
       [can_view, secretId, projectId]
     );
-    if (result.rowCount === 0) return res.status(404).json({ error: 'Secret not found.' });
+    if (result.rowCount === 0) {
+      logger.warn({ secretId, projectId }, 'Visibility update failed: Not found');
+      return res.status(404).json({ error: 'Secret not found.' });
+    }
     
     const secret = result.rows[0];
     logAudit(req.user.id, projectId, 'secret_visibility_change', { key: secret.key, env: secret.environment, can_view });
+    logger.info({ userId: req.user.id, secretId, can_view }, 'Secret visibility updated');
+    
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, secretId }, 'Visibility update failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
@@ -163,13 +181,18 @@ export const deleteSecret = async (req: any, res: Response) => {
         [secretId, projectId, req.user.id]
       );
     }
-    if (result.rowCount === 0) return res.status(404).json({ error: 'Secret not found or access denied.' });
+    if (!result || result.rowCount === 0) {
+      logger.warn({ secretId, projectId, userId: req.user.id }, 'Secret deletion failed: Not found or denied');
+      return res.status(404).json({ error: 'Secret not found or access denied.' });
+    }
     
     const secret = result.rows[0];
     logAudit(req.user.id, projectId, 'secret_delete', { key: secret.key, env: secret.environment });
+    logger.info({ userId: req.user.id, secretId, key: secret.key }, 'Secret deleted');
+    
     res.json({ success: true });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, secretId }, 'Secret deletion failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
@@ -199,9 +222,11 @@ export const pullSecrets = async (req: any, res: Response) => {
     }
 
     logAudit(req.user.id, projectId, 'secret_read', { env, method: 'pull' });
+    logger.info({ userId: req.user.id, projectId, env, count: result.rows.length }, 'Secrets pulled (CLI/env)');
+    
     res.json({ secrets });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId, env }, 'Pull secrets failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
@@ -238,9 +263,11 @@ export const runSecrets = async (req: any, res: Response) => {
     }
 
     logAudit(req.user.id, projectId, 'secret_read', { env, method: 'run' });
+    logger.info({ userId: req.user.id, projectId, env, count: result.rows.length, restrictedCount: restrictedValues.length }, 'Secrets run (CLI injection)');
+    
     res.json({ secrets, restrictedValues });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId, env }, 'Run secrets failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
@@ -273,9 +300,11 @@ export const syncSecrets = async (req: any, res: Response) => {
     }
 
     logAudit(req.user.id, projectId, 'secret_sync', { from: fromEnv, to: toEnv, count: secretsResult.rowCount });
+    logger.info({ userId: req.user.id, projectId, from: fromEnv, to: toEnv, count: secretsResult.rowCount }, 'Secrets synced across environments');
+    
     res.json({ success: true, count: secretsResult.rowCount });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, projectId, from: fromEnv, to: toEnv }, 'Secret sync failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
@@ -294,6 +323,8 @@ export const bulkUpsertSecrets = async (req: any, res: Response) => {
     const masterKey = decryptMasterKey(project.master_key);
     const userId = isPersonal ? req.user.id : null;
 
+    logger.info({ userId: req.user.id, projectId, env: environment, count: secrets.length }, 'Bulk upsert started');
+
     await client.query('BEGIN');
     for (const s of secrets) {
       if (!s.key || s.value === undefined) continue;
@@ -310,10 +341,12 @@ export const bulkUpsertSecrets = async (req: any, res: Response) => {
     }
     await client.query('COMMIT');
     logAudit(req.user.id, projectId, 'secret_bulk_write', { count: secrets.length, env: environment });
+    logger.info({ userId: req.user.id, projectId, env: environment, count: secrets.length }, 'Bulk upsert completed');
+    
     res.json({ success: true, count: secrets.length });
-  } catch (err) {
+  } catch (err: any) {
     await client.query('ROLLBACK');
-    console.error(err);
+    logger.error({ err: err.message, projectId, env: environment }, 'Bulk upsert failed, transaction rolled back');
     res.status(500).json({ error: 'Internal server error.' });
   } finally {
     client.release();

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import pool, { hashSessionToken } from '../db/db';
+import logger from '../utils/logger';
 
 const SESSION_COOKIE = 'synkrypt_session';
 
@@ -18,12 +19,15 @@ function extractToken(req: Request): string | null {
     .map(c => c.trim())
     .find(c => c.startsWith(`${SESSION_COOKIE}=`));
 
-  return match ? match.split('=')[1] : null;
+  return match ? (match.split('=')[1] as string) : null;
 }
 
 export const requireAuth = async (req: any, res: Response, next: NextFunction) => {
   const token = extractToken(req);
-  if (!token) return res.status(401).json({ error: 'Not authenticated.' });
+  if (!token) {
+    logger.debug({ path: req.path }, 'Auth denied: No token provided');
+    return res.status(401).json({ error: 'Not authenticated.' });
+  }
 
   try {
     const result = await pool.query(
@@ -34,19 +38,23 @@ export const requireAuth = async (req: any, res: Response, next: NextFunction) =
       [hashSessionToken(token)]
     );
 
-    if (!result.rows.length) return res.status(401).json({ error: 'Session expired or invalid.' });
+    if (!result.rows.length) {
+      logger.warn({ path: req.path }, 'Auth denied: Session expired or invalid');
+      return res.status(401).json({ error: 'Session expired or invalid.' });
+    }
 
     req.user = result.rows[0];
     req.user.id = result.rows[0].user_id;
     next();
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    logger.error({ err: err.message, userId: req.user?.id }, 'Identity lookup failed');
     res.status(500).json({ error: 'Internal server error.' });
   }
 };
 
 export const requireAdmin = (req: any, res: Response, next: NextFunction) => {
   if (req.user?.role !== 'admin') {
+    logger.warn({ user: req.user?.email, path: req.path }, 'Admin access requirement failed');
     return res.status(403).json({ error: 'Admin access required.' });
   }
   next();

@@ -47,7 +47,16 @@ program
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) throw new Error(await res.text());
+
+      if (!res.ok) {
+        const body = await res.text();
+        let err = body || `HTTP ${res.status}`;
+        try {
+          const data = JSON.parse(body);
+          if (data.error) err = data.error;
+        } catch {}
+        throw new Error(err);
+      }
 
       const cookie = res.headers.get("set-cookie");
       const match = cookie?.match(/synkrypt_session=([^;]+)/);

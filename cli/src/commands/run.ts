@@ -48,7 +48,7 @@ export async function runCommand(commandArgs: string[], options: { env: string }
       env[key] = decryptSymmetric(secret.encryptedValue, decryptedKey);
     }
 
-    console.log(`🚀 Running in '${environment}': ${commandArgs.join(" ")}`);
+    console.log(`Running in '${environment}': ${commandArgs.join(" ")}`);
     const command = commandArgs[0];
     if (!command) {
       console.error(" No command provided");

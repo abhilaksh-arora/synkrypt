@@ -1,15 +1,89 @@
-# cli
+# Synkrypt CLI
 
-To install dependencies:
+This package builds the `synkrypt` command-line tool.
+
+## Local Development Install (Bun)
 
 ```bash
+cd cli
 bun install
+bun link
 ```
 
-To run:
+Verify:
 
 ```bash
-bun run index.ts
+synkrypt --help
 ```
 
-This project was created using `bun init` in bun v1.3.11. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+## Common CLI Commands
+
+```bash
+synkrypt login
+synkrypt whoami
+synkrypt use <project-key>
+synkrypt pull --env dev
+synkrypt run --env dev -- bun run dev
+synkrypt logout
+```
+
+## Building Standalone Binaries
+
+The CLI is compiled into standalone native executables using Bun’s `--compile`.
+
+Build per platform:
+
+```bash
+cd cli
+
+# macOS
+bun run compile:darwin-arm64
+bun run compile:darwin-x64
+
+# Linux
+bun run compile:linux-x64
+bun run compile:linux-arm64
+```
+
+### Linux Baseline Builds (Recommended)
+
+Baseline targets are more broadly compatible across Linux distributions.
+
+```bash
+cd cli
+bun run compile:linux-x64:baseline
+bun run compile:linux-arm64:baseline
+```
+
+Or build everything (baseline Linux + macOS):
+
+```bash
+cd cli
+bun run compile:all:baseline
+```
+
+## Packaging Release Assets (tar.gz + SHA256SUMS)
+
+This creates GitHub Releases-friendly assets under `cli/release/`.
+
+```bash
+cd cli
+
+# 1) Build the binaries first
+bun run compile:all:baseline
+
+# 2) Package into tarballs + checksums
+bun run release:assets
+```
+
+Output:
+
+- `cli/release/synkrypt-<os>-<arch>.tar.gz` (contains a single `synkrypt` binary)
+- `cli/release/SHA256SUMS.txt`
+
+## Git Hygiene
+
+Do not commit build artifacts. Add these paths to gitignore:
+
+- `cli/bin/`
+- `cli/release/`

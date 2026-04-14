@@ -1,4 +1,4 @@
-# 🛡️ Synkrypt: Simplified Secrets Management
+# Synkrypt: Simplified Secrets Management
 
 [![Platform: Self-Hostable](https://img.shields.io/badge/Platform-Self--Hostable-blueviolet?style=flat-square)](https://github.com/abhilaksh/synkrypt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
@@ -8,7 +8,7 @@
 
 ---
 
-## 💎 Core Philosophy
+## Core Philosophy
 
 Professional secrets management should stay out of your way. Synkrypt focuses on clarity and security:
 
@@ -16,13 +16,13 @@ Professional secrets management should stay out of your way. Synkrypt focuses on
 - **Zero-Knowledge Architecture**: Every project generates a unique cryptographic Master Key. The server never stores your raw secrets in plaintext.
 - **CLI-Native Workflow**: Inject secrets directly into child processes at runtime. No more unencrypted `.env` files on developer machines.
 
-## 🚀 Key Features
+## Key Features
 
-### 🔐 Project-Based Isolation
+### Project-Based Isolation
 
 Each project is a security boundary. A compromise in one project does not affect the cryptographic integrity of others.
 
-### 🌓 Professional Dashboard
+### Professional Dashboard
 
 A clean, high-performance interface for managing configuration and team access.
 
@@ -32,7 +32,7 @@ A clean, high-performance interface for managing configuration and team access.
 - **Access Presets**: Standardized "Team Tags" (Senior Dev, PM, etc.) for rapid, one-click provisioning.
 - **Developer Aesthetics**: Built with professional typography (**Inter**) and high-contrast monospace (**JetBrains Mono**) for a premium developer experience.
 
-### 🐚 Developer CLI
+### Developer CLI
 
 The primary interface for engineering teams. Seamlessly transition from development to production.
 
@@ -40,13 +40,13 @@ The primary interface for engineering teams. Seamlessly transition from developm
 - `synkrypt run`: Execute any command with injected environment variables.
 - `synkrypt pull`: Safely sync viewable variables to a local `.env` file.
 
-### ⚡ Sub-millisecond Performance
+### Sub-millisecond Performance
 
 Validated sub-millisecond injection overhead. Synkrypt ensures security never slows down your development cycle or production boot times.
 
 ---
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### 1. Requirements
 
@@ -93,11 +93,11 @@ Accessible at `http://localhost:5173`. Create your admin account to get started.
 
 ---
 
-## 🐚 CLI Usage
+## CLI Usage
 
 ### Installation
 
-#### 📦 One-Line Global Install (Recommended)
+#### One-Line Global Install (Recommended)
 Install the Synkrypt CLI globally with a single command:
 
 ```bash
@@ -106,7 +106,33 @@ curl -fsSL https://synkrypt.abhilaksharora.com/install.sh | bash
 
 *Note: This downloads a standalone binary. No Node.js or Bun required on the client machine.*
 
-#### 🛠️ Local Development (Using Bun)
+#### Install From GitHub Releases
+Download the correct `synkrypt-<os>-<arch>.tar.gz` asset from the release and place it on your `PATH`.
+
+macOS example (Apple Silicon):
+
+```bash
+# 1) Download from GitHub Releases (replace URL/tag as needed)
+curl -L -o synkrypt-macos-arm64.tar.gz "<RELEASE_ASSET_URL>"
+
+# 2) Extract (archive contains a single `synkrypt` binary)
+tar -xzf synkrypt-macos-arm64.tar.gz
+
+# 3) Install
+chmod +x synkrypt
+sudo mv synkrypt /usr/local/bin/synkrypt
+
+# 4) Verify
+synkrypt --help
+```
+
+If your release includes `SHA256SUMS.txt`, verify checksums before installing:
+
+```bash
+shasum -a 256 -c SHA256SUMS.txt
+```
+
+#### Local Development (Using Bun)
 If you prefer to run from source:
 
 ```bash
@@ -132,12 +158,20 @@ synkrypt use <project-key>
 ### Run with Secrets
 
 ```bash
-synkrypt run --env dev -- bun run dev
+synkrypt run --env dev -- <your-command>
 ```
+
+### System Management
+
+Keep your toolset up-to-date or remove it cleanly:
+
+- **Update**: `synkrypt update` (Runs the official installer)
+- **Uninstall**: `synkrypt uninstall` (Removes the global binary)
+- **Full Purge**: `synkrypt uninstall --purge` (Removes binary and `~/.synkrypt` config)
 
 ---
 
-## 🚢 Production Deployment
+## Production Deployment
 
 Synkrypt is designed for high-availability production environments. We provide pre-configured templates for **PM2** and **Caddy**.
 
@@ -146,7 +180,7 @@ Synkrypt is designed for high-availability production environments. We provide p
 
 For a detailed step-by-step guide, see our [Production Deployment Guide](docs/deployment.md).
 
-## 🛡️ Security Layers
+## Security Layers
 
 1. **Layer 1 (Server Secret)**: Protects project encryption keys in the database.
 2. **Layer 2 (Project Master Key)**: A unique 256-bit key generated per project.
@@ -154,6 +188,14 @@ For a detailed step-by-step guide, see our [Production Deployment Guide](docs/de
 
 ---
 
-## ⚖️ License
+## Development & Releasing
+
+To package new versions of the CLI for distribution:
+
+1. **Compile**: `cd cli && bun run compile:all`
+2. **Archive**: `cd cli && bun run release:assets`
+3. **Publish**: Upload the contents of `cli/release/` to a new GitHub Release.
+
+## License
 
 Distributed under the MIT License. See `LICENSE` for more information.

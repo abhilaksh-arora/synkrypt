@@ -8,6 +8,7 @@ import {
   requireProjectConfig,
   ensureDirs,
   deleteSession,
+  GLOBAL_CONFIG_DIR,
 } from "./src/utils/config";
 import { assertEnvironment } from "./src/utils/environment";
 import { api } from "./src/utils/api";
@@ -39,7 +40,8 @@ program
     try {
       // Login ignores normal session fetching, so we intercept the Set-Cookie token
       const BASE_URL =
-        process.env.SYNKRYPT_SERVER_URL || "https://synkrypt.abhilaksharora.com";
+        process.env.SYNKRYPT_SERVER_URL ||
+        "https://synkrypt.abhilaksharora.com";
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,6 +189,71 @@ program
       });
     } catch (err: any) {
       console.error(` Failed to run command: ${err.message}`);
+    }
+  });
+
+program
+  .command("update")
+  .description("Update the Synkrypt CLI to the latest version")
+  .action(() => {
+    console.log("Checking for updates and running installer...");
+    const cmd =
+      "curl -fsSL https://synkrypt.abhilaksharora.com/install.sh | bash";
+
+    const child = spawn(cmd, {
+      shell: true,
+      stdio: "inherit",
+    });
+
+    child.on("exit", (code) => {
+      if (code !== 0) {
+        console.error(
+          "\nUpdate failed. You may need to run this command with higher privileges or check your internet connection.",
+        );
+      }
+      process.exit(code ?? 0);
+    });
+  });
+
+program
+  .command("uninstall")
+  .description("Remove the Synkrypt CLI from your system")
+  .option(
+    "--purge",
+    "Also remove all local configuration and session data (~/.synkrypt)",
+  )
+  .action((options) => {
+    const binaryPath = "/usr/local/bin/synkrypt";
+
+    console.log("Preparing to uninstall Synkrypt...");
+
+    if (options.purge) {
+      console.log(`Purging local configuration at ${GLOBAL_CONFIG_DIR}...`);
+      try {
+        if (fs.existsSync(GLOBAL_CONFIG_DIR)) {
+          fs.rmSync(GLOBAL_CONFIG_DIR, { recursive: true, force: true });
+          console.log("Local configuration cleared.");
+        }
+      } catch (err: any) {
+        console.error(`Failed to clear local configuration: ${err.message}`);
+      }
+    }
+
+    console.log(`Removing global binary at ${binaryPath}...`);
+    try {
+      if (fs.existsSync(binaryPath)) {
+        // We can't easily self-delete while running on some systems,
+        // but on Unix we can unlink the file.
+        fs.unlinkSync(binaryPath);
+        console.log("Synkrypt CLI has been uninstalled.");
+      } else {
+        console.log(
+          "Global binary not found at /usr/local/bin/synkrypt. You may have installed it via another method (e.g., bun link).",
+        );
+      }
+    } catch (err: any) {
+      console.error(`\nFailed to remove binary: ${err.message}`);
+      console.error("💡 Try running: sudo synkrypt uninstall");
     }
   });
 

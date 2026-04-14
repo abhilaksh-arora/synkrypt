@@ -1,8 +1,8 @@
-# 🚀 Production Deployment Guide: Synkrypt
+# Production Deployment Guide: Synkrypt
 
 This guide covers the deployment of Synkrypt on a production Linux server (Ubuntu/Debian) using **PM2** and **Caddy**.
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before starting, ensure your server has the following installed:
 - **Bun**: `curl -fsSL https://bun.sh/install | bash`
@@ -12,7 +12,7 @@ Before starting, ensure your server has the following installed:
 
 ---
 
-## 🛠️ Step 1: Server Preparation
+## Step 1: Server Preparation
 
 Clone your repository to the server (e.g., `/var/www/synkrypt`) and install dependencies:
 
@@ -35,7 +35,7 @@ PORT=2809
 
 ---
 
-## 🏗️ Step 2: Build & Migrate
+## Step 2: Build & Migrate
 
 Build both the frontend and backend using Turbo:
 
@@ -53,7 +53,7 @@ bun run src/db/migrate.ts
 
 ---
 
-## 🛰️ Step 3: Start the Backend (PM2)
+## Step 3: Start the Backend (PM2)
 
 We use the `ecosystem.config.js` provided in the root to manage the server process.
 
@@ -70,7 +70,7 @@ Check status with `pm2 status`. Logs are available in `./server/logs/`.
 
 ---
 
-## 🌐 Step 4: Configure the Reverse Proxy (Caddy)
+## Step 4: Configure the Reverse Proxy (Caddy)
 
 Edit the `Caddyfile` in the root (or copy it to `/etc/caddy/Caddyfile`) and update your domain:
 
@@ -99,7 +99,7 @@ sudo caddy reload --config /var/www/synkrypt/Caddyfile
 
 ---
 
-## 🛡️ Security Check
+## Security Check
 
 1. **Firewall**: Ensure ports `80` (HTTP) and `443` (HTTPS) are open.
 2. **CORS**: Verify that `CORS_ORIGIN` in your server `.env` exactly matches your frontend URL.
@@ -107,7 +107,7 @@ sudo caddy reload --config /var/www/synkrypt/Caddyfile
 
 ---
 
-## 🔄 Updates
+## Updates
 
 To deploy updates in the future:
 

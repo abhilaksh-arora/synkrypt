@@ -31,6 +31,9 @@ bun-debug.log*
 # CLI
 cli/bin/
 cli/.env
+cli/bin/
+cli/release/
+cli/.release-tmp/
 
 # Testing
 coverage/

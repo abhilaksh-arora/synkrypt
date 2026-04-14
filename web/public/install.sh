@@ -81,5 +81,5 @@ fi
 cd - > /dev/null
 rm -rf "${TMP_DIR}"
 
-echo -e "\n${GREEN}✅ Synkrypt CLI installed successfully!${NC}"
+echo -e "\n${GREEN}Synkrypt CLI installed successfully!${NC}"
 echo -e "Try it out by running: ${BLUE}synkrypt --help${NC}\n"

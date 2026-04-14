@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-const GLOBAL_CONFIG_DIR = path.join(os.homedir(), ".synkrypt");
+export const GLOBAL_CONFIG_DIR = path.join(os.homedir(), ".synkrypt");
 const SESSION_FILE = path.join(GLOBAL_CONFIG_DIR, "session.json");
 const LOCAL_CONFIG_DIR = ".synkrypt";
 const PROJECT_CONFIG = path.join(LOCAL_CONFIG_DIR, "config.json");

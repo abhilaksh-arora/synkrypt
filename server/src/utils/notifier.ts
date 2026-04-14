@@ -15,13 +15,13 @@ export async function notifyRestrictedAccess(projectId: string, userId: string, 
     const user = userRes.rows[0];
 
     const message = {
-      text: `🛡️ *Synkrypt Security Alert: Restricted Secret Access*`,
+      text: `*Synkrypt Security Alert: Restricted Secret Access*`,
       blocks: [
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `🛡️ *Synkrypt Governance: Restricted Access Detected*`
+            text: `*Synkrypt Governance: Restricted Access Detected*`
           }
         },
         {
@@ -36,7 +36,7 @@ export async function notifyRestrictedAccess(projectId: string, userId: string, 
         {
           type: "context",
           elements: [
-            { type: "mrkdwn", text: `⚠️ This secret is marked as *Restricted*. Audit trail updated.` }
+            { type: "mrkdwn", text: `This secret is marked as *Restricted*. Audit trail updated.` }
           ]
         }
       ]

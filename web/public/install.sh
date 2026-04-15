@@ -31,6 +31,12 @@ case "${OS}" in
     Darwin)
         OS_NAME="macos"
         ;;
+    MINGW*|MSYS*|CYGWIN*)
+        echo -e "${RED}Error: This installer is for macOS/Linux.${NC}"
+        echo -e "On Windows, run this in PowerShell instead:"
+        echo -e "${BLUE}  irm https://synkrypt.abhilaksharora.com/install.ps1 | iex${NC}"
+        exit 1
+        ;;
     *)
         echo -e "${RED}Error: Unsupported OS ${OS}${NC}"
         exit 1

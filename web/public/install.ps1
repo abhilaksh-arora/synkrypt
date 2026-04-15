@@ -37,14 +37,7 @@ Write-Host "Downloading Synkrypt for Windows ($archName)..."
 try {
     Invoke-WebRequest -Uri $downloadUrl -OutFile $tempZip -UseBasicParsing
 } catch {
-    # Temporary fallback for current v0.1.10 release which has .exe.zip extension
-    $fallbackZipName = "synkrypt-windows-$archName.exe.zip"
-    $fallbackUrl = "https://github.com/abhilaksh-arora/synkrypt/releases/latest/download/$fallbackZipName"
-    try {
-        Invoke-WebRequest -Uri $fallbackUrl -OutFile $tempZip -UseBasicParsing
-    } catch {
-        Write-Error "Failed to download $zipName from GitHub. The binary might not be released yet.`nVisit: https://github.com/abhilaksh-arora/synkrypt/releases"
-    }
+    Write-Error "Failed to download $zipName from GitHub. The binary might not be released yet.`nVisit: https://github.com/abhilaksh-arora/synkrypt/releases"
 }
 
 # 3. Extraction

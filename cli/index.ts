@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 import fs from "fs";
+import os from "os";
+import path from "path";
 import { spawn } from "child_process";
 import { Command } from "commander";
 import {
@@ -269,8 +271,11 @@ program
   .description("Update the Synkrypt CLI to the latest version")
   .action(() => {
     console.log("Checking for updates and running installer...");
-    const cmd =
-      "curl -fsSL https://synkrypt.abhilaksharora.com/install.sh | bash";
+
+    const isWindows = process.platform === "win32";
+    const cmd = isWindows
+      ? "powershell -ExecutionPolicy Bypass -Command \"irm https://synkrypt.abhilaksharora.com/install.ps1 | iex\""
+      : "curl -fsSL https://synkrypt.abhilaksharora.com/install.sh | bash";
 
     const child = spawn(cmd, {
       shell: true,
@@ -295,7 +300,10 @@ program
     "Also remove all local configuration and session data (~/.synkrypt)",
   )
   .action((options) => {
-    const binaryPath = "/usr/local/bin/synkrypt";
+    const isWindows = process.platform === "win32";
+    const binaryPath = isWindows
+      ? path.join(os.homedir(), ".synkrypt", "bin", "synkrypt.exe")
+      : "/usr/local/bin/synkrypt";
 
     console.log("Preparing to uninstall Synkrypt...");
 
@@ -311,21 +319,35 @@ program
       }
     }
 
-    console.log(`Removing global binary at ${binaryPath}...`);
+    console.log(`Removing binary at ${binaryPath}...`);
     try {
       if (fs.existsSync(binaryPath)) {
-        // We can't easily self-delete while running on some systems,
-        // but on Unix we can unlink the file.
-        fs.unlinkSync(binaryPath);
-        console.log("Synkrypt CLI has been uninstalled.");
+        if (isWindows) {
+          // On Windows, a running exe cannot delete itself directly.
+          // Schedule deletion via a detached cmd process.
+          const delCmd = spawn("cmd", ["/c", "ping", "127.0.0.1", "-n", "2", ">", "nul", "&&", "del", "/f", binaryPath], {
+            detached: true,
+            stdio: "ignore",
+            shell: true,
+          });
+          delCmd.unref();
+          console.log("Synkrypt CLI has been uninstalled.");
+        } else {
+          fs.unlinkSync(binaryPath);
+          console.log("Synkrypt CLI has been uninstalled.");
+        }
       } else {
         console.log(
-          "Global binary not found at /usr/local/bin/synkrypt. You may have installed it via another method (e.g., bun link).",
+          `Binary not found at ${binaryPath}. You may have installed it via another method (e.g., bun link).`,
         );
       }
     } catch (err: any) {
       console.error(`\nFailed to remove binary: ${err.message}`);
-      console.error("💡 Try running: sudo synkrypt uninstall");
+      if (isWindows) {
+        console.error("Try running this command in an elevated PowerShell (Run as Administrator).");
+      } else {
+        console.error("Try running: sudo synkrypt uninstall");
+      }
     }
   });
 

@@ -13,11 +13,13 @@ import {
 import { assertEnvironment } from "./src/utils/environment";
 import { api } from "./src/utils/api";
 
+import { version } from "./package.json";
+
 const program = new Command();
 program
   .name("synkrypt")
   .description("Synkrypt CLI — Developer tools")
-  .version("0.1.0");
+  .version(version);
 
 program
   .command("login")
@@ -327,4 +329,8 @@ program
     }
   });
 
-program.parse();
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+} else {
+  program.parse(process.argv);
+}

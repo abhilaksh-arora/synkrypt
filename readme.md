@@ -18,6 +18,18 @@ Install the standalone binary with a single command:
 
 ---
 
+## 🗺 Workflow Overview
+
+Before using the CLI, follow these steps in the [Synkrypt Dashboard](https://synkrypt.abhilaksharora.com):
+
+1. **Dashboard Login**: Sign up and create your organization.
+2. **Add Team**: Invite colleagues or create access presets (optional).
+3. **Create Project**: Start a new project to get your **Project Key**.
+4. **Add Secrets**: Enter your environment variables (Dev, Staging, or Prod).
+5. **CLI Integration**: Use the CLI to auth and inject these secrets into your apps.
+
+---
+
 ## 🚀 Quick Start (5 Minutes)
 
 ### 1. Authenticate

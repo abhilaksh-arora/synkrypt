@@ -43,6 +43,9 @@ bun run compile:darwin-x64
 # Linux
 bun run compile:linux-x64
 bun run compile:linux-arm64
+
+# Windows
+bun run compile:windows-x64
 ```
 
 ### Linux Baseline Builds (Recommended)
@@ -79,6 +82,7 @@ bun run release:assets
 Output:
 
 - `cli/release/synkrypt-<os>-<arch>.tar.gz` (contains a single `synkrypt` binary)
+- `cli/release/synkrypt-windows-x64.zip` (contains `synkrypt.exe`)
 - `cli/release/SHA256SUMS.txt`
 
 ## Git Hygiene

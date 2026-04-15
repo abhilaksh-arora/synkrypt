@@ -6,6 +6,7 @@ type Asset = {
   srcPath: string;
   platformTag: string;
   archiveName: string;
+  archiveType: "tar.gz" | "zip";
 };
 
 function sha256File(filePath: string): string {
@@ -46,10 +47,12 @@ function inferAssets(binDir: string): Asset[] {
   return files.map((name) => {
     // Expected format: synkrypt-<os>-<arch>
     const platformTag = name.replace(/^synkrypt-/, "");
+    const isWindows = name.endsWith(".exe") || platformTag.startsWith("windows-");
     return {
       srcPath: path.join(binDir, name),
       platformTag,
-      archiveName: `synkrypt-${platformTag}.tar.gz`,
+      archiveName: isWindows ? `synkrypt-${platformTag}.zip` : `synkrypt-${platformTag}.tar.gz`,
+      archiveType: isWindows ? "zip" : "tar.gz",
     };
   });
 }
@@ -59,16 +62,22 @@ function makeArchive(asset: Asset, outDir: string, tmpRoot: string) {
   rmrf(tmpDir);
   ensureDir(tmpDir);
 
-  // Put the binary in the archive as `synkrypt` so install instructions are consistent.
-  const stagedBin = path.join(tmpDir, "synkrypt");
+  // Put the binary in the archive as `synkrypt` or `synkrypt.exe` so install instructions are consistent.
+  const stagedName = asset.archiveType === "zip" ? "synkrypt.exe" : "synkrypt";
+  const stagedBin = path.join(tmpDir, stagedName);
   fs.copyFileSync(asset.srcPath, stagedBin);
   fs.chmodSync(stagedBin, 0o755);
 
   const outPath = path.join(outDir, asset.archiveName);
   if (fs.existsSync(outPath)) fs.unlinkSync(outPath);
 
-  // tar -czf <out> -C <tmpDir> synkrypt
-  run("tar", ["-czf", outPath, "-C", tmpDir, "synkrypt"], process.cwd());
+  if (asset.archiveType === "zip") {
+    // zip -j <out> <file>
+    run("zip", ["-j", outPath, stagedBin], process.cwd());
+  } else {
+    // tar -czf <out> -C <tmpDir> synkrypt
+    run("tar", ["-czf", outPath, "-C", tmpDir, "synkrypt"], process.cwd());
+  }
 
   return outPath;
 }

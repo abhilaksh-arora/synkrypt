@@ -1,6 +1,6 @@
 {
   "name": "@synkrypt/cli",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "description": "Synkrypt CLI — Developer tools for secure secret management",
   "bin": {
     "synkrypt": "./index.ts"
@@ -22,10 +22,11 @@
     "compile:linux-arm64": "bun build ./index.ts --compile --target=bun-linux-arm64 --outfile ./bin/synkrypt-linux-arm64",
     "compile:darwin-x64": "bun build ./index.ts --compile --target=bun-darwin-x64 --outfile ./bin/synkrypt-macos-x64",
     "compile:darwin-arm64": "bun build ./index.ts --compile --target=bun-darwin-arm64 --outfile ./bin/synkrypt-macos-arm64",
+    "compile:windows-x64": "bun build ./index.ts --compile --target=bun-windows-x64 --outfile ./bin/synkrypt-windows-x64.exe",
     "compile:linux-x64:baseline": "bun build ./index.ts --compile --target=bun-linux-x64-baseline --outfile ./bin/synkrypt-linux-x64",
     "compile:linux-arm64:baseline": "bun build ./index.ts --compile --target=bun-linux-arm64-baseline --outfile ./bin/synkrypt-linux-arm64",
-    "compile:all": "bun run compile:linux-x64 && bun run compile:linux-arm64 && bun run compile:darwin-x64 && bun run compile:darwin-arm64",
-    "compile:all:baseline": "bun run compile:linux-x64:baseline && bun run compile:linux-arm64:baseline && bun run compile:darwin-x64 && bun run compile:darwin-arm64",
+    "compile:all": "bun run compile:linux-x64 && bun run compile:linux-arm64 && bun run compile:darwin-x64 && bun run compile:darwin-arm64 && bun run compile:windows-x64",
+    "compile:all:baseline": "bun run compile:linux-x64:baseline && bun run compile:linux-arm64:baseline && bun run compile:darwin-x64 && bun run compile:darwin-arm64 && bun run compile:windows-x64",
     "release:assets": "bun run ./scripts/release-assets.ts",
     "publish": "bun run ./scripts/publish.ts"
   },

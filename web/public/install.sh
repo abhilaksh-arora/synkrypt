@@ -55,14 +55,26 @@ DOWNLOAD_URL="https://github.com/abhilaksh-arora/synkrypt/releases/latest/downlo
 
 # 2. Preparation
 TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
 cd "${TMP_DIR}"
 
 echo -e "Downloading Synkrypt for ${OS_NAME} (${ARCH_NAME})..."
 
 # 3. Download
-if ! curl -fsSL -o synkrypt.tar.gz "${DOWNLOAD_URL}"; then
-    echo -e "${RED}Error: Download failed. The binary might not be released yet.${NC}"
-    echo -e "Visit: https://github.com/abhilaksh-arora/synkrypt/releases"
+if command -v curl >/dev/null 2>&1; then
+    if ! curl -fL --progress-bar -o synkrypt.tar.gz "${DOWNLOAD_URL}"; then
+        echo -e "${RED}Error: Download failed with curl. The binary might not be released yet.${NC}"
+        echo -e "Visit: https://github.com/abhilaksh-arora/synkrypt/releases"
+        exit 1
+    fi
+elif command -v wget >/dev/null 2>&1; then
+    if ! wget -q --show-progress -O synkrypt.tar.gz "${DOWNLOAD_URL}"; then
+        echo -e "${RED}Error: Download failed with wget. The binary might not be released yet.${NC}"
+        echo -e "Visit: https://github.com/abhilaksh-arora/synkrypt/releases"
+        exit 1
+    fi
+else
+    echo -e "${RED}Error: Neither curl nor wget found. Please install one of them to continue.${NC}"
     exit 1
 fi
 
@@ -82,7 +94,7 @@ fi
 
 # 5. Cleanup
 cd - > /dev/null
-rm -rf "${TMP_DIR}"
+# TMP_DIR is automatically removed by the trap
 
 echo -e "\n${GREEN}Synkrypt CLI installed successfully!${NC}"
 echo -e "Try it out by running: ${BLUE}synkrypt --help${NC}\n"

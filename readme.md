@@ -154,7 +154,10 @@ _Note: This downloads a standalone binary. No Node.js or Bun required on the cli
 
 #### Install From GitHub Releases
 
-Download the correct `synkrypt-<os>-<arch>.tar.gz` asset from the release and place it on your `PATH`.
+Download the correct asset from the release and place it on your `PATH`.
+
+- macOS/Linux: `synkrypt-<os>-<arch>.tar.gz`
+- Windows: `synkrypt-windows-x64.zip`
 
 macOS example (Apple Silicon):
 
@@ -177,6 +180,22 @@ If your release includes `SHA256SUMS.txt`, verify checksums before installing:
 
 ```bash
 shasum -a 256 -c SHA256SUMS.txt
+```
+
+Windows example (x64):
+
+1. Download `synkrypt-windows-x64.zip` from the release.
+2. Extract it (contains `synkrypt.exe`).
+3. Move `synkrypt.exe` somewhere on your PATH, for example:
+
+```powershell
+mkdir -Force $env:USERPROFILE\\bin | Out-Null
+Move-Item .\\synkrypt.exe $env:USERPROFILE\\bin\\synkrypt.exe -Force
+
+# Add to PATH (new terminal required)
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";" + "$env:USERPROFILE\\bin", "User")
+
+synkrypt --help
 ```
 
 #### Local Development (Using Bun)

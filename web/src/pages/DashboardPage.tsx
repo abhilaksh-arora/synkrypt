@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Zap, Terminal, Key, Plus as PlusIcon, 
+  Zap, Terminal, Key, Plus as PlusIcon, Building2, Building,
   ArrowRight, Loader2, LayoutGrid,  Activity, ShieldAlert, ShieldCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -16,11 +16,13 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { currentOrg, currentOrgRole } = useOrg();
+  const { orgs, currentOrg, currentOrgRole, refreshOrgs } = useOrg();
   const { toast } = useToast();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
+  const [newTeamName, setNewTeamName] = useState('');
   const [newProject, setNewProject] = useState({ name: '', description: '', github_repo: '' });
   const [creating, setCreating] = useState(false);
 
@@ -64,6 +66,23 @@ export default function DashboardPage() {
     }
   };
 
+  const handleCreateTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTeamName) return;
+    setCreating(true);
+    try {
+      await api.createOrg({ name: newTeamName });
+      await refreshOrgs();
+      setIsCreateTeamOpen(false);
+      setNewTeamName('');
+      toast({ title: "Team Created", description: "Your organization is now ready." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -97,7 +116,22 @@ export default function DashboardPage() {
            [1,2,3].map(i => (
              <Card key={i} className="h-64 rounded-3xl bg-card border-border animate-pulse" />
            ))
-         ) : projects.length === 0 ? (
+          ) : orgs.length === 0 && !user?.isAdmin ? (
+            <Card className="col-span-full py-20 rounded-3xl bg-muted/5 border-dashed border-border flex flex-col items-center justify-center text-center">
+               <div className="h-20 w-20 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm">
+                  <Building2 className="size-10" />
+               </div>
+               <h3 className="text-3xl font-bold tracking-tight mb-4">
+                 Welcome to Synkrypt
+               </h3>
+               <p className="text-muted-foreground max-w-md mb-10 text-lg italic">
+                  Before managing secrets, you need to create an <strong>Organization</strong> (Team). This will be the cryptographic home for all your projects.
+               </p>
+               <Button onClick={() => setIsCreateTeamOpen(true)} className="rounded-2xl h-14 px-10 font-bold text-lg shadow-lg hover:scale-105 transition-all">
+                  <PlusIcon className="mr-2 size-5" /> Initialize First Team
+               </Button>
+            </Card>
+          ) : projects.length === 0 ? (
             <Card className="col-span-full py-20 rounded-3xl bg-muted/5 border-dashed border-border flex flex-col items-center justify-center text-center">
                <ShieldAlert className="size-16 text-muted-foreground/20 mb-6" />
                <h3 className="text-2xl font-bold tracking-tight mb-2">
@@ -105,11 +139,11 @@ export default function DashboardPage() {
                </h3>
                <p className="text-muted-foreground max-w-sm mb-8">
                   {!currentOrg && !user?.isAdmin 
-                    ? "Please select or create a team to start managing projects." 
+                    ? "Please select or create a team from the sidebar to start managing projects." 
                     : "You haven't created any projects yet. Get started by initializing your first environment."}
                </p>
-               {canCreateProject && projects.length === 0 && (
-                 <Button onClick={() => setIsCreateOpen(true)} variant="outline" className="rounded-xl h-12 px-8 font-bold">
+               {canCreateProject && projects.length === 0 && currentOrg && (
+                 <Button onClick={() => setIsCreateOpen(true)} className="rounded-xl h-12 px-8 font-bold">
                     Create First Project
                  </Button>
                )}
@@ -251,6 +285,42 @@ export default function DashboardPage() {
           <DialogFooter className="p-8 pt-5 bg-muted/5 border-t border-border/10">
             <Button form="project-form" type="submit" disabled={creating} className="w-full h-12 rounded-lg text-lg font-bold transition-all shadow-md">
               {creating ? <Loader2 className="animate-spin" /> : "Create Project"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreateTeamOpen} onOpenChange={setIsCreateTeamOpen}>
+        <DialogContent className="sm:max-w-[440px] rounded-xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-8 pb-5">
+            <DialogHeader className="mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-sm">
+                <Building2 size={20} />
+              </div>
+              <DialogTitle className="text-2xl font-bold tracking-tight">Create Your Team</DialogTitle>
+              <DialogDescription className="text-sm">
+                An organization is required to manage your projects.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form id="team-form" onSubmit={handleCreateTeam} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="t-name" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Organization Name</Label>
+                <Input
+                  id="t-name"
+                  placeholder="e.g. Acme Engineering"
+                  className="h-11 rounded-lg bg-muted/30 border-border px-4 transition-all font-bold text-base"
+                  value={newTeamName}
+                  onChange={e => setNewTeamName(e.target.value)}
+                  required
+                />
+              </div>
+            </form>
+          </div>
+          
+          <DialogFooter className="p-8 pt-5 bg-muted/5 border-t border-border/10">
+            <Button form="team-form" type="submit" disabled={creating} className="w-full h-12 rounded-lg text-lg font-bold transition-all shadow-md">
+              {creating ? <Loader2 className="animate-spin" /> : "Initialize Team"}
             </Button>
           </DialogFooter>
         </DialogContent>

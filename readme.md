@@ -11,10 +11,10 @@
 
 Install the standalone binary with a single command:
 
-| Platform | Installation Command |
-| :--- | :--- |
-| **macOS / Linux** | `curl -fsSL https://synkrypt.abhilaksharora.com/install.sh \| bash` |
-| **Windows** | `powershell -c "irm https://synkrypt.abhilaksharora.com/install.ps1 \| iex"` |
+| Platform          | Installation Command                                                         |
+| :---------------- | :--------------------------------------------------------------------------- |
+| **macOS / Linux** | `curl -fsSL https://synkrypt.abhilaksharora.com/install.sh \| bash`          |
+| **Windows**       | `powershell -c "irm https://synkrypt.abhilaksharora.com/install.ps1 \| iex"` |
 
 ---
 
@@ -23,9 +23,9 @@ Install the standalone binary with a single command:
 Before using the CLI, follow these steps in the [Synkrypt Dashboard](https://synkrypt.abhilaksharora.com):
 
 1. **Dashboard Login**: Sign up and create your organization.
-2. **Add Team**: Invite colleagues or create access presets (optional).
-3. **Create Project**: Start a new project to get your **Project Key**.
-4. **Add Secrets**: Enter your environment variables (Dev, Staging, or Prod).
+2. **Initialize Organization**: You must create or join an **Organization/Team** first. This is the cryptographic home for all your projects.
+3. **Create Project**: Once your organization is ready, start a new project to get your unique **Project Key**.
+4. **Add Secrets**: Enter your environment variables (Dev, Staging, or Prod) for that project.
 5. **CLI Integration**: Use the CLI to auth and inject these secrets into your apps.
 
 ---
@@ -33,39 +33,47 @@ Before using the CLI, follow these steps in the [Synkrypt Dashboard](https://syn
 ## 🚀 Quick Start (5 Minutes)
 
 ### 1. Authenticate
+
 ```bash
 synkrypt login
 ```
 
 ### 2. Link your Project
+
 Navigate to your project folder and link it using your Project Key (found in the dashboard).
+
 ```bash
 synkrypt use <project-key>
 ```
 
 ### 3. Run Securely
+
 Inject your environment variables directly into your process.
+
 ```bash
-# Example for a Node/Bun app
+# Run in development (default)
 synkrypt run -- bun run dev
 
-# Example for Docker Compose
-synkrypt run -- docker-compose up
+# Run in production
+synkrypt run --env prod -- bun run start
+
+# Docker Compose with staging environment
+synkrypt run --env staging -- docker-compose up
 ```
 
 ---
 
 ## 🛠 Command Reference
 
-| Command | Description |
-| :--- | :--- |
-| `synkrypt login` | Authenticate your local device. |
-| `synkrypt use <key>` | Link the current directory to a project. |
-| `synkrypt run -- <cmd>` | Inject secrets and execute a command. |
-| `synkrypt pull` | Sync cloud secrets to a local `.env` file. |
-| `synkrypt push` | Bulk upload a local `.env` to the cloud. |
-| `synkrypt update` | Self-update to the latest version. |
-| `synkrypt uninstall` | Cleanly remove Synkrypt from your system. |
+| Command                 | Description                                |
+| :---------------------- | :----------------------------------------- |
+| `synkrypt login`        | Authenticate your local device.            |
+| `synkrypt use <key>`    | Link the current directory to a project.   |
+| `synkrypt run -- <cmd>` | Inject secrets and execute a command.      |
+| `synkrypt pull`         | Sync cloud secrets to a local `.env` file. |
+| `synkrypt push`         | Bulk upload a local `.env` to the cloud.   |
+| `synkrypt update`       | Self-update to the latest version.         |
+| `synkrypt uninstall`    | Cleanly remove Synkrypt from your system.  |
 
 ---
 
@@ -83,6 +91,7 @@ synkrypt run -- docker-compose up
 Synkrypt is fully self-hostable for organizations requiring absolute data sovereignty.
 
 ### Node Setup
+
 ```bash
 git clone https://github.com/abhilaksh-arora/synkrypt.git
 cd synkrypt
@@ -90,7 +99,9 @@ bun install
 ```
 
 ### Server Configuration
+
 Set up your `server/.env`:
+
 ```bash
 PORT=2809
 DATABASE_URL=postgresql://user:pass@localhost:5432/synkrypt
@@ -99,10 +110,12 @@ JWT_SECRET=<64_char_hex_key>
 ```
 
 ### Launch
+
 ```bash
 cd server && bun run src/db/migrate.ts && bun run dev
 cd web && bun run dev
 ```
+
 Dashboard available at `http://localhost:5173`.
 
 ---
@@ -123,9 +136,9 @@ Synkrypt does not use simple symmetric encryption. It relies on a multi-tiered c
 Synkrypt is a multi-tenant platform. Every project, secret, and member is scoped to an **Organization**. This allows multiple teams to share a single platform node while maintaining absolute data sovereignty between organizational boundaries.
 
 - **Hierarchical Role Matrix**: Every user holds a specific role within their organization:
-    - **Owner**: Full lifecycle control over the organization, billing, and membership.
-    - **Admin**: Can create projects, manage environments, and provision access for members within the org.
-    - **Member**: Baseline access to specific projects they are assigned to. Read/pull rights are environment-guarded.
+  - **Owner**: Full lifecycle control over the organization, billing, and membership.
+  - **Admin**: Can create projects, manage environments, and provision access for members within the org.
+  - **Member**: Baseline access to specific projects they are assigned to. Read/pull rights are environment-guarded.
 - **Platform Administration**: A separate `Platform Admin` flag handles system-wide concerns like managing users across all organizations, audit auditing, and system configuration.
 - **Temporary TTL Access**: Set expiration dates (Time-To-Live) for members. The moment the TTL hits zero, the user's session terminates and all their local ciphertexts are cryptographically invalidated by the server.
 
@@ -154,4 +167,5 @@ Synkrypt is designed for high-availability production environments. We provide p
 ---
 
 ## 📄 License
+
 Distributed under the MIT License. See `LICENSE` for more information.

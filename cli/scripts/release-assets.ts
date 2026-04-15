@@ -46,8 +46,14 @@ function inferAssets(binDir: string): Asset[] {
 
   return files.map((name) => {
     // Expected format: synkrypt-<os>-<arch>
-    const platformTag = name.replace(/^synkrypt-/, "");
+    let platformTag = name.replace(/^synkrypt-/, "");
     const isWindows = name.endsWith(".exe") || platformTag.startsWith("windows-");
+    
+    // For Windows, strip the .exe extension from the tag for cleaner archive names
+    if (name.endsWith(".exe")) {
+      platformTag = platformTag.replace(/\.exe$/, "");
+    }
+
     return {
       srcPath: path.join(binDir, name),
       platformTag,

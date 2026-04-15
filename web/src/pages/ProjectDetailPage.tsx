@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { 
-  KeyRound, Plus as PlusIcon, Eye as EyeIcon, EyeOff as EyeOffIcon, Copy as CopyIcon, Trash2 as TrashIcon, 
+  KeyRound, Plus as PlusIcon, Eye as EyeIcon, EyeOff as EyeOffIcon, Copy as CopyIcon, Trash2 as TrashIcon, Pencil,
   Loader2, ShieldCheck, Terminal, Search as SearchIcon, Users,
   Settings2, FileText, ShieldQuestion, User as UserIcon,
   Globe, Download, Clock, Activity, History, ArrowRightLeft, ArrowRight, UserPlus, Calendar,
@@ -41,6 +41,8 @@ export default function ProjectDetailPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingSecret, setEditingSecret] = useState<any>(null);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [orgMembers, setOrgMembers] = useState<any[]>([]);
   const [accessPresets, setAccessPresets] = useState<any[]>([]);
@@ -172,6 +174,27 @@ export default function ProjectDetailPage() {
       setIsAddOpen(false);
       setNewSecret({ key: '', value: '', environment: 'dev', can_view: true, isPersonal: false, type: 'env' });
       toast({ title: "Secret Saved" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEdit = (secret: any) => {
+    setEditingSecret({ ...secret });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.upsertSecret(id!, { ...editingSecret, environment: env });
+      await loadData();
+      setIsEditOpen(false);
+      setEditingSecret(null);
+      toast({ title: "Secret Updated" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -543,6 +566,9 @@ export default function ProjectDetailPage() {
                   </TableCell>
                   <TableCell className="text-right pr-6">
                      <div className="flex justify-end gap-1.5">
+                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground/30 hover:text-primary hover:bg-primary/5 transition-all opacity-0 group-hover:opacity-100" onClick={() => handleEdit(secret)}>
+                            <Pencil size={14} />
+                         </Button>
                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground/30 hover:text-destructive hover:bg-destructive/5 transition-all opacity-0 group-hover:opacity-100" onClick={() => handleDelete(secret.id)}>
                             <TrashIcon size={16} />
                          </Button>
@@ -924,6 +950,43 @@ export default function ProjectDetailPage() {
           <DialogFooter className="p-6 pt-4 bg-muted/5 border-t border-border/10">
             <Button form="secret-form" type="submit" disabled={saving} className="w-full h-10 rounded-lg text-sm font-bold shadow-sm">
               {saving ? <Loader2 className="animate-spin size-4" /> : "Create Secret"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[440px] rounded-xl p-0 border-border overflow-hidden shadow-xl bg-card">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-5">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-sm">
+                <Pencil size={20} />
+              </div>
+              <DialogTitle className="text-xl font-bold tracking-tight">Edit Secret</DialogTitle>
+            </DialogHeader>
+            {editingSecret && (
+              <form id="edit-secret-form" onSubmit={handleUpdate} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-s-key" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Variable Name</Label>
+                  <Input id="edit-s-key" className="h-9 rounded-lg bg-muted/60 border-border px-4 focus:bg-background font-mono font-bold text-sm uppercase opacity-70" value={editingSecret.key} disabled />
+                  <p className="text-[10px] text-muted-foreground italic ml-1.5">Renaming keys is not supported yet to prevent system breakage.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-s-val" className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">New Value</Label>
+                  <Input id="edit-s-val" type="password" placeholder="Leave blank to keep current value" className="h-9 rounded-lg bg-muted/30 border-border px-4 focus:bg-background font-mono text-sm" value={editingSecret.value} onChange={e => setEditingSecret((p: any) => ({ ...p, value: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-1 gap-2.5">
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border" onClick={() => setEditingSecret((p: any) => ({ ...p, can_view: !p.can_view }))}>
+                      <Label className="text-sm font-bold tracking-tight">Show in Browser</Label>
+                      <Switch checked={editingSecret.can_view} onCheckedChange={(val) => setEditingSecret((p: any) => ({ ...p, can_view: val }))} />
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+          <DialogFooter className="p-6 pt-4 bg-muted/5 border-t border-border/10">
+            <Button form="edit-secret-form" type="submit" disabled={saving} className="w-full h-10 rounded-lg text-sm font-bold shadow-sm">
+              {saving ? <Loader2 className="animate-spin size-4" /> : "Update Secret"}
             </Button>
           </DialogFooter>
         </DialogContent>

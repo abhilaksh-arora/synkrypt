@@ -5,7 +5,6 @@
     "": {
       "name": "synkrypt-test-app",
       "dependencies": {
-        "@synkrypt/cli": "link:@synkrypt/cli",
         "chalk": "^4.1.2",
         "express": "^5.2.1",
         "jsonwebtoken": "^9.0.3",
@@ -14,8 +13,6 @@
     },
   },
   "packages": {
-    "@synkrypt/cli": ["@synkrypt/cli@link:@synkrypt/cli", { "bin": { "synkrypt": "./index.ts" } }],
-
     "accepts": ["accepts@2.0.0", "", { "dependencies": { "mime-types": "^3.0.0", "negotiator": "^1.0.0" } }, "sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng=="],
 
     "ansi-styles": ["ansi-styles@4.3.0", "", { "dependencies": { "color-convert": "^2.0.1" } }, "sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg=="],

@@ -1,6 +1,6 @@
 {
   "name": "@synkrypt/cli",
-  "version": "0.1.14",
+  "version": "2.0.0",
   "description": "Synkrypt CLI — Developer tools for secure secret management",
   "bin": {
     "synkrypt": "./index.ts"
@@ -50,6 +50,8 @@
     "publish": "bun run ./scripts/publish.ts"
   },
   "dependencies": {
-    "commander": "^14.0.3"
+    "@clack/prompts": "^1.2.0",
+    "commander": "^14.0.3",
+    "picocolors": "^1.1.1"
   }
 }

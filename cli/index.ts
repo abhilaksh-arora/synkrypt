@@ -4,6 +4,8 @@ import os from "os";
 import path from "path";
 import { spawn } from "child_process";
 import { Command } from "commander";
+import * as p from "@clack/prompts";
+import pc from "picocolors";
 import {
   saveSession,
   setProjectConfig,
@@ -29,17 +31,39 @@ program
   .option("-e, --email <email>", "User email")
   .option("-p, --password <password>", "User password")
   .action(async (options) => {
+    p.intro(`${pc.bgCyan(pc.black(" synkrypt auth "))}`);
+
     let email = options.email;
     let password = options.password;
-    if (!email || !password) {
-      email = prompt("📧 Email:");
-      password = prompt("🔐 Password:");
+
+    if (!email) {
+      email = (await p.text({
+        message: "📧 Email:",
+        placeholder: "you@example.com",
+        validate: (value) => {
+          if (!value) return "Email is required";
+          if (!value.includes("@")) return "Invalid email format";
+        },
+      })) as string;
     }
 
-    if (!email || !password) {
-      console.error(" Email and password are required.");
-      process.exit(1);
+    if (!password) {
+      password = (await p.password({
+        message: "🔐 Password:",
+        mask: "•",
+        validate: (value) => {
+          if (!value) return "Password is required";
+        },
+      })) as string;
     }
+
+    if (p.isCancel(email) || p.isCancel(password)) {
+      p.outro("Authentication cancelled.");
+      process.exit(0);
+    }
+
+    const s = p.spinner();
+    s.start("Authenticating with Synkrypt...");
 
     try {
       // Login ignores normal session fetching, so we intercept the Set-Cookie token
@@ -67,9 +91,12 @@ program
       if (!match || !match[1]) throw new Error("No session token returned.");
 
       saveSession(match[1]);
-      console.log(` Logged in successfully.`);
+      s.stop("Authenticated successfully.");
+      p.outro(pc.green("Welcome back to Synkrypt!"));
     } catch (err: any) {
-      console.error(` Login failed: ${err.message}`);
+      s.stop("Authentication failed.", 1);
+      p.note(err.message, "Error");
+      p.outro("Please try again or contact support.");
     }
   });
 
@@ -223,7 +250,7 @@ program
       const injectedEnv = {
         ...process.env,
         ...secretsData.secrets,
-        SYNKRYPT_START_TIME: process.hrtime.bigint().toString(),
+        SYNKRYPT_START_TIME: Date.now().toString(),
       };
 
       console.log(

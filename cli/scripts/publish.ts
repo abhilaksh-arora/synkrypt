@@ -70,22 +70,22 @@ async function main() {
       .map((file) => path.join(releaseDir, file));
     run("gh", ["release", "upload", tag, ...assets, "--clobber"], cliRoot);
 
-    // 6. Publish to npm
-    console.log(`\nPublishing to npm...`);
-    // Attempt to find npm/node in common paths if not in PATH
-    const npmPath = fs.existsSync("/opt/homebrew/bin/npm") 
-      ? "/opt/homebrew/bin/npm" 
-      : "npm";
+    // // 6. Publish to npm
+    // console.log(`\nPublishing to npm...`);
+    // // Attempt to find npm/node in common paths if not in PATH
+    // const npmPath = fs.existsSync("/opt/homebrew/bin/npm")
+    //   ? "/opt/homebrew/bin/npm"
+    //   : "npm";
 
-    try {
-      // Check if logged in first
-      run(npmPath, ["whoami"], cliRoot);
-      run(npmPath, ["publish", "--access", "public"], cliRoot);
-      console.log(`\nSuccessfully published ${tag} to npm!`);
-    } catch (npmErr: any) {
-      console.error(`\nnpm publication failed: ${npmErr.message}`);
-      console.log(`Please ensure you are logged in via 'npm login' before running this script.`);
-    }
+    // try {
+    //   // Check if logged in first
+    //   run(npmPath, ["whoami"], cliRoot);
+    //   run(npmPath, ["publish", "--access", "public"], cliRoot);
+    //   console.log(`\nSuccessfully published ${tag} to npm!`);
+    // } catch (npmErr: any) {
+    //   console.error(`\nnpm publication failed: ${npmErr.message}`);
+    //   console.log(`Please ensure you are logged in via 'npm login' before running this script.`);
+    // }
 
     console.log(`\nSuccessfully published ${tag} to GitHub!`);
   } catch (err: any) {

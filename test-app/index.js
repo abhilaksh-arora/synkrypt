@@ -7,6 +7,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const bootTime = Date.now();
 const bootTimeHr = process.hrtime.bigint();
+const startTime = process.env.SYNKRYPT_START_TIME;
 
 console.log("\n" + chalk.cyan.bold(" 🛡️  SYNKRYPT PRODUCTION-TEST BACKEND "));
 console.log(chalk.gray("─────────────────────────────────────────"));
@@ -144,7 +145,7 @@ app.get("/profile", async (req, res) => {
   res.json({
     synkrypt_metrics: {
       injection_overhead: startTime
-        ? `${(Number(process.hrtime.bigint() - BigInt(startTime)) / 1e6).toFixed(2)}ms`
+        ? `${Date.now() - Number(startTime)}ms`
         : "unknown",
       environment_ready: !!process.env.DATABASE_URL,
       restricted_keys_found: Object.keys(process.env).filter(
@@ -169,17 +170,17 @@ app.listen(port, () => {
   console.log(
     `${chalk.white("JWT Security:")} ${JWT_SECRET !== "fallback-secret-if-missing" ? chalk.green("ENCRYPTED") : chalk.red("VULNERABLE")}`,
   );
-  const startTime = process.env.SYNKRYPT_START_TIME;
-  let overhead = "unknown";
-  if (startTime) {
-    const delta = Number(process.hrtime.bigint() - BigInt(startTime)) / 1e6;
-    overhead = `${delta.toFixed(2)}ms`;
-  }
-
   console.log(
     `${chalk.white("DB Capability:")} ${DB_URL ? chalk.green("READY") : chalk.red("DISABLED")}`,
   );
-  console.log(`${chalk.white("Nexus Latency:")} ${chalk.magenta(overhead)}`);
+
+  let overhead = "unknown";
+  if (startTime) {
+    const delta = Date.now() - Number(startTime);
+    overhead = `${delta}ms`;
+  }
+
+  console.log(`${chalk.white("Synkrypt Latency:")} ${chalk.magenta(overhead)}`);
   console.log(chalk.gray("\n─────────────────────────────────────────"));
   console.log(chalk.bold.magenta(`Active at: http://localhost:${port}`));
 });

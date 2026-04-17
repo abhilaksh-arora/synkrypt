@@ -65,25 +65,6 @@ function inferAssets(binDir: string): Asset[] {
   });
 }
 
-function compressIfPossible(filePath: string) {
-  try {
-    const check = Bun.spawnSync(["upx", "--version"], { stderr: "ignore", stdout: "ignore" });
-    if (check.exitCode === 0) {
-      console.log(`\nOptimizing binary with UPX: ${path.basename(filePath)}...`);
-      // Use --best for maximum compression, --lzma is even better but can be slower
-      const child = Bun.spawnSync(["upx", "--best", filePath], {
-        stdout: "inherit",
-        stderr: "inherit",
-      });
-      if (child.exitCode !== 0) {
-        console.warn(`Warning: UPX compression failed for ${filePath}. Proceeding with uncompressed binary.`);
-      }
-    }
-  } catch (err) {
-    // UPX not available, silenty proceed
-  }
-}
-
 function makeArchive(asset: Asset, outDir: string, tmpRoot: string) {
   const tmpDir = path.join(tmpRoot, asset.platformTag);
   rmrf(tmpDir);
@@ -94,9 +75,6 @@ function makeArchive(asset: Asset, outDir: string, tmpRoot: string) {
   const stagedBin = path.join(tmpDir, stagedName);
   fs.copyFileSync(asset.srcPath, stagedBin);
   fs.chmodSync(stagedBin, 0o755);
-
-  // Optimize binary size before archiving
-  compressIfPossible(stagedBin);
 
   const outPath = path.join(outDir, asset.archiveName);
   if (fs.existsSync(outPath)) fs.unlinkSync(outPath);

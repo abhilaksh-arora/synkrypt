@@ -6,7 +6,7 @@ type Asset = {
   srcPath: string;
   platformTag: string;
   archiveName: string;
-  archiveType: "tar.gz" | "zip";
+  archiveType: "tar.xz" | "zip";
 };
 
 function sha256File(filePath: string): string {
@@ -57,8 +57,10 @@ function inferAssets(binDir: string): Asset[] {
     return {
       srcPath: path.join(binDir, name),
       platformTag,
-      archiveName: isWindows ? `synkrypt-${platformTag}.zip` : `synkrypt-${platformTag}.tar.gz`,
-      archiveType: isWindows ? "zip" : "tar.gz",
+      archiveName: isWindows
+        ? `synkrypt-${platformTag}.zip`
+        : `synkrypt-${platformTag}.tar.xz`,
+      archiveType: isWindows ? "zip" : "tar.xz",
     };
   });
 }
@@ -103,8 +105,17 @@ function makeArchive(asset: Asset, outDir: string, tmpRoot: string) {
     // zip -j <out> <file>
     run("zip", ["-j", outPath, stagedBin], process.cwd());
   } else {
-    // tar -czf <out> -C <tmpDir> synkrypt
-    run("tar", ["-czf", outPath, "-C", tmpDir, "synkrypt"], process.cwd());
+    // tar -cJf <out> -C <tmpDir> synkrypt
+    // We set XZ_OPT="-9" for maximum compression ratio.
+    const child = Bun.spawnSync(["tar", "-cJf", outPath, "-C", tmpDir, "synkrypt"], {
+      cwd: process.cwd(),
+      env: { ...process.env, XZ_OPT: "-9" },
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    if (child.exitCode !== 0) {
+      throw new Error(`Tar command failed with exit code ${child.exitCode}`);
+    }
   }
 
   return outPath;
@@ -123,6 +134,14 @@ function main() {
 
   ensureDir(outDir);
   ensureDir(tmpRoot);
+
+  // Avoid uploading stale assets (publish.ts uploads everything in cli/release).
+  for (const entry of fs.readdirSync(outDir, { withFileTypes: true })) {
+    if (!entry.isFile()) continue;
+    if (entry.name === "SHA256SUMS.txt" || entry.name.startsWith("synkrypt-")) {
+      fs.unlinkSync(path.join(outDir, entry.name));
+    }
+  }
 
   const assets = inferAssets(binDir);
   if (assets.length === 0) {

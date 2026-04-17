@@ -56,7 +56,7 @@ case "${ARCH}" in
         ;;
 esac
 
-ARCHIVE_NAME="synkrypt-${OS_NAME}-${ARCH_NAME}.tar.gz"
+ARCHIVE_NAME="synkrypt-${OS_NAME}-${ARCH_NAME}.tar.xz"
 DOWNLOAD_URL="https://github.com/abhilaksh-arora/synkrypt/releases/latest/download/${ARCHIVE_NAME}"
 
 # 2. Preparation
@@ -68,13 +68,13 @@ echo -e "Downloading Synkrypt for ${OS_NAME} (${ARCH_NAME})..."
 
 # 3. Download
 if command -v curl >/dev/null 2>&1; then
-    if ! curl -fL --progress-bar -o synkrypt.tar.gz "${DOWNLOAD_URL}"; then
+    if ! curl -fL --progress-bar -o synkrypt.tar.xz "${DOWNLOAD_URL}"; then
         echo -e "${RED}Error: Download failed with curl. The binary might not be released yet.${NC}"
         echo -e "Visit: https://github.com/abhilaksh-arora/synkrypt/releases"
         exit 1
     fi
 elif command -v wget >/dev/null 2>&1; then
-    if ! wget -q --show-progress -O synkrypt.tar.gz "${DOWNLOAD_URL}"; then
+    if ! wget -q --show-progress -O synkrypt.tar.xz "${DOWNLOAD_URL}"; then
         echo -e "${RED}Error: Download failed with wget. The binary might not be released yet.${NC}"
         echo -e "Visit: https://github.com/abhilaksh-arora/synkrypt/releases"
         exit 1
@@ -85,8 +85,8 @@ else
 fi
 
 echo -e "Extracting Synkrypt..."
-tar -xzf synkrypt.tar.gz
-rm synkrypt.tar.gz
+tar -xf synkrypt.tar.xz
+rm synkrypt.tar.xz
 chmod +x synkrypt
 
 # 4. Install

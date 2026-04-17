@@ -65,7 +65,7 @@ cd cli
 bun run compile:all:baseline
 ```
 
-## Packaging Release Assets (tar.gz + SHA256SUMS)
+## Packaging Release Assets (tar.xz + SHA256SUMS)
 
 This creates GitHub Releases-friendly assets under `cli/release/`.
 
@@ -81,7 +81,7 @@ bun run release:assets
 
 Output:
 
-- `cli/release/synkrypt-<os>-<arch>.tar.gz` (contains a single `synkrypt` binary)
+- `cli/release/synkrypt-<os>-<arch>.tar.xz` (contains a single `synkrypt` binary)
 - `cli/release/synkrypt-windows-x64.zip` (contains `synkrypt.exe`)
 - `cli/release/SHA256SUMS.txt`
 

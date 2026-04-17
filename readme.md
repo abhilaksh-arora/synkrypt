@@ -51,8 +51,8 @@ synkrypt use <project-key>
 Inject your environment variables directly into your process.
 
 ```bash
-# Run in development (default)
-synkrypt run -- bun run dev
+# Run in development
+synkrypt run --env dev bun run dev
 
 # Run in production
 synkrypt run --env prod -- bun run start
@@ -65,15 +65,15 @@ synkrypt run --env staging -- docker-compose up
 
 ## 🛠 Command Reference
 
-| Command                 | Description                                |
-| :---------------------- | :----------------------------------------- |
-| `synkrypt login`        | Authenticate your local device.            |
-| `synkrypt use <key>`    | Link the current directory to a project.   |
-| `synkrypt run -- <cmd>` | Inject secrets and execute a command.      |
-| `synkrypt pull`         | Sync cloud secrets to a local `.env` file. |
-| `synkrypt push`         | Bulk upload a local `.env` to the cloud.   |
-| `synkrypt update`       | Self-update to the latest version.         |
-| `synkrypt uninstall`    | Cleanly remove Synkrypt from your system.  |
+| Command                             | Description                                |
+| :---------------------------------- | :----------------------------------------- |
+| `synkrypt login`                    | Authenticate your local device.            |
+| `synkrypt use <key>`                | Link the current directory to a project.   |
+| `synkrypt run --env <env> -- <cmd>` | Inject secrets and execute a command.      |
+| `synkrypt pull`                     | Sync cloud secrets to a local `.env` file. |
+| `synkrypt push`                     | Bulk upload a local `.env` to the cloud.   |
+| `synkrypt update`                   | Self-update to the latest version.         |
+| `synkrypt uninstall`                | Cleanly remove Synkrypt from your system.  |
 
 ---
 

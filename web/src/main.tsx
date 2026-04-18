@@ -8,7 +8,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./index.css";
 
+import { PostHogProvider } from '@posthog/react';
+
+const options = {
+  api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+  defaults: '2026-01-30',
+} as const;
+
+
 import LoginPage from "./pages/LoginPage";
+
 import AppLayout from "./pages/AppLayout";
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -48,8 +57,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <AuthProvider>
+    <PostHogProvider apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN || 'missing-key'} options={options}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <AuthProvider>
         <OrgProvider>
           <TooltipProvider>
           <BrowserRouter>
@@ -105,5 +115,6 @@ createRoot(document.getElementById("root")!).render(
       </OrgProvider>
     </AuthProvider>
   </ThemeProvider>
+  </PostHogProvider>
   </StrictMode>,
 );

@@ -29,11 +29,11 @@ function CodeBlock({ label, children }: { label: string; children: string }) {
   return (
     <div className="my-6 overflow-hidden rounded-2xl border border-border bg-[#0f1115] text-zinc-100 shadow-sm">
       <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-2.5">
-        <span className="font-mono text-sm font-bold uppercase tracking-widest text-zinc-400">
+        <span className="font-mono text-xs sm:text-sm font-bold uppercase tracking-widest text-zinc-400">
           {label}
         </span>
       </div>
-      <pre className="scrollbar-none overflow-x-auto px-6 py-5 text-[13px] leading-relaxed">
+      <pre className="scrollbar-none overflow-x-auto px-4 py-4 sm:px-6 sm:py-5 text-[12px] sm:text-[13px] leading-relaxed">
         <code className="font-mono">{children}</code>
       </pre>
     </div>
@@ -52,13 +52,13 @@ function DocCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="relative z-10 mb-6 flex items-start gap-4">
+    <Card className="group relative overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+      <div className="relative z-10 mb-6 flex items-start gap-3 sm:gap-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
         </div>
-        <div>
-          <h2 className="text-lg font-bold tracking-tight text-foreground">{title}</h2>
+        <div className="min-w-0">
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">{title}</h2>
           <p className="mt-1.5 max-w-3xl text-xs leading-relaxed text-muted-foreground italic">{description}</p>
         </div>
       </div>
@@ -71,14 +71,14 @@ function StepList({ steps }: { steps: Array<{ title: string; body: React.ReactNo
   return (
     <div className="space-y-3">
       {steps.map((step, index) => (
-        <div key={step.title} className="rounded-2xl border border-border bg-muted/5 p-5">
+        <div key={step.title} className="rounded-2xl border border-border bg-muted/5 p-4 sm:p-5">
           <div className="mb-2 flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary border border-primary/10">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary border border-primary/10">
               {index + 1}
             </div>
             <h4 className="font-bold text-foreground">{step.title}</h4>
           </div>
-          <div className="pl-10 text-sm">{step.body}</div>
+          <div className="pl-0 sm:pl-10 text-sm">{step.body}</div>
         </div>
       ))}
     </div>
@@ -104,7 +104,7 @@ function Callout({
   const Icon = tone === "warning" ? AlertTriangle : tone === "success" ? CheckCircle2 : Info;
 
   return (
-    <div className={`rounded-2xl border p-5 ${styles}`}>
+    <div className={`rounded-2xl border p-4 sm:p-5 ${styles}`}>
       <div className="mb-2 flex items-center gap-3">
         <Icon className="size-4 shrink-0 text-primary" />
         <h4 className="font-bold">{title}</h4>
@@ -115,7 +115,7 @@ function Callout({
 }
 
 function InlineCode({ children }: { children: React.ReactNode }) {
-  return <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px] text-foreground border border-border/50">{children}</code>;
+  return <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px] text-foreground border border-border/50 break-all">{children}</code>;
 }
 
 const sections: DocSection[] = [
@@ -341,20 +341,20 @@ const groups = Array.from(new Set(sections.map((section) => section.group)));
 export default function DocsPage() {
   return (
     <div className="flex flex-col gap-8">
-      <header className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <header className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm">
         <div className="max-w-4xl space-y-3">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
             <ShieldCheck className="size-3.5" />
             <span>Developer Reference</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Playbook</h1>
-          <p className="max-w-3xl text-base leading-relaxed text-muted-foreground italic">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Playbook</h1>
+          <p className="max-w-3xl text-sm sm:text-base leading-relaxed text-muted-foreground italic">
             Safe management of secrets, team access, and project configurations.
           </p>
         </div>
       </header>
 
-      <div className="grid gap-12 xl:grid-cols-[260px_1fr]">
+      <div className="grid gap-8 xl:gap-12 xl:grid-cols-[260px_1fr]">
         {/* Left Sidebar (Sticky Navigation) */}
         <aside className="hidden xl:block sticky top-6 self-start max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-none rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div>
@@ -388,7 +388,7 @@ export default function DocsPage() {
         </aside>
 
         {/* Right Content (Scrolls) */}
-        <div className="max-w-4xl space-y-12">
+        <div className="min-w-0 max-w-4xl space-y-8 sm:space-y-12">
           {sections.map((section) => (
             <section key={section.id} id={section.id} className="scroll-mt-8">
               <DocCard icon={section.icon} title={section.title} description={section.description}>

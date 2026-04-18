@@ -388,7 +388,7 @@ export default function DocsPage() {
         </aside>
 
         {/* Right Content (Scrolls) */}
-        <div className="min-w-0 max-w-4xl space-y-8 sm:space-y-12">
+        <div className="min-w-0 space-y-8 sm:space-y-12">
           {sections.map((section) => (
             <section key={section.id} id={section.id} className="scroll-mt-8">
               <DocCard icon={section.icon} title={section.title} description={section.description}>
